@@ -4,6 +4,7 @@ import br.com.fiap.nora.conexoes.ConexaoFactory;
 import br.com.fiap.nora.entities.Encaminhamento;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,8 @@ public class EncaminhamentoDao {
             "SELECT * FROM TB_ENCAMINHAMENTO ORDER BY ID_ENCAMINHAMENTO";
     private static final String SQL_SELECT_BY_ID =
             "SELECT * FROM TB_ENCAMINHAMENTO WHERE ID_ENCAMINHAMENTO=?";
+    private static final String SQL_FOLLOWUP =
+            "SELECT * FROM TB_ENCAMINHAMENTO WHERE TRUNC(PREV_FOLLOW) = ? AND STTS_ENCAM = 'ativo'";
 
     public Connection minhaConexao;
 
@@ -118,6 +121,18 @@ public class EncaminhamentoDao {
             ex.printStackTrace();
         }
         return null;
+    }
+
+    // Usado pelo FollowUpService — retorna encaminhamentos ativos com prev_follow na data alvo
+    public List<Encaminhamento> listarParaFollowUp(LocalDate dataAlvo) throws SQLException {
+        List<Encaminhamento> lista = new ArrayList<>();
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_FOLLOWUP)) {
+            stmt.setDate(1, java.sql.Date.valueOf(dataAlvo));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) lista.add(mapear(rs));
+            }
+        }
+        return lista;
     }
 
     private Encaminhamento mapear(ResultSet rs) throws SQLException {

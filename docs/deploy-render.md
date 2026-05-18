@@ -20,6 +20,12 @@
 | ORACLE_URL | JDBC URL Oracle | jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL |
 | API_PYTHON_BASE_URL | URL base da API Python | https://api-triagens.onrender.com |
 
+**Variável opcional:**
+
+| Variável | Descrição |
+|---|---|
+| N8N_WEBHOOK_FOLLOWUP_URL | (opcional) URL do webhook N8N para follow-up automático. Se ausente, scheduler roda em modo passivo (apenas log, sem POST). |
+
 Configurar no painel Render → Environment → Environment Variables.  
 **Nunca commitar credenciais no repositório.**
 
@@ -51,6 +57,7 @@ Anotar aqui após o primeiro deploy bem-sucedido e configurar no frontend React 
 | 500 em todas as rotas | Variáveis de ambiente ausentes | Verificar se as 4 variáveis estão configuradas no painel |
 | CORS bloqueado no frontend | CorsFilter não está listando a origem correta | Confirmar `filters/CorsFilter.java` com `https://projeto-nora.vercel.app` |
 | API Python timeout | `API_PYTHON_BASE_URL` errada ou Python dormindo (free tier) | Aguardar warm-up do Render; verificar URL |
+| Scheduler não dispara webhook | `N8N_WEBHOOK_FOLLOWUP_URL` ausente ou vazia | Configurar a variável; verificar logs do Render às 09:00 |
 
 ## Observações sobre free tier
 

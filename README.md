@@ -49,9 +49,20 @@ ORACLE_USER=seu_usuario_oracle
 ORACLE_PASS=sua_senha_oracle
 ORACLE_URL=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL
 API_PYTHON_BASE_URL=https://api-triagens.onrender.com
+N8N_WEBHOOK_FOLLOWUP_URL=               # opcional — ver seção follow-up abaixo
 ```
 
 Copie `.env.example` para `.env` e preencha. **Nunca commite `.env`.**
+
+### Follow-up automático (opcional)
+
+A aplicação possui um scheduler que roda diariamente às 09:00 e dispara webhook ao N8N para cada encaminhamento com `PREV_FOLLOW` na data atual e `STTS_ENCAM = 'ativo'`.
+
+Configurar `N8N_WEBHOOK_FOLLOWUP_URL` com a URL do webhook N8N para ativar o disparo. Se a variável não estiver definida, o scheduler executa, registra log informativo e encerra sem disparar (modo passivo — aplicação sobe normalmente).
+
+Cada disparo bem-sucedido registra um evento em `TB_ACOMP_EVENTO` com `TIPO_EVENTO = 'follow_up'` e `ORIGEM = 'sistema'`. Falha em um encaminhamento é isolada — os demais são processados normalmente.
+
+> Extensão aceitável declarada — `CLAUDE.md §4.2`. Requer `quarkus-scheduler` no `pom.xml`.
 
 ### Comandos
 
@@ -112,13 +123,11 @@ API Python unificada em `https://api-triagens.onrender.com`. Match geográfico u
 - `paciente.stts_trat` não atualizado em `encerrarEncaminhamento()` — pendente
 - Conversa inexistente na aprovação gera aviso em log mas não aborta a transação
 - `GET /conversas/{id}/mensagens` não retorna 404 se a conversa não existir
-- Follow-up automático (`@Scheduled`) não implementado
 - Sem paginação nas listagens
 - Sem caching nas métricas
 
 ## Evolução futura
 
-- Follow-up automático com `@Scheduled` (15 dias pós-encaminhamento)
 - Hash de senha com bcrypt
 - ExceptionMapper global para padronizar erros sem try/catch repetido
 - Paginação com `@QueryParam` offset/limit
