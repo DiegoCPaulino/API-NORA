@@ -1,5 +1,9 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
-!target/quarkus-app/*
+@'
+target/
+.git/
+.idea/
+.claude/
+.env
+.env.*
+!.env.example
+'@ | Set-Content .dockerignore -Encoding UTF8
