@@ -26,6 +26,8 @@ public class AprovacaoTriagemService {
     public static final String PREFIXO_SEM_DENTISTA   = "SEM_DENTISTA:";
 
     public Encaminhamento aprovar(long triagemId) throws RegraNegocioException {
+        // Transação atômica: triagem, pessoa, paciente, conversa (se existir) e encaminhamento processados juntos.
+        // Falha em qualquer passo dispara rollback total. A conversa é opcional — cadastros presenciais da ONG podem não ter conversa vinculada.
         Connection conn = null;
         try {
             conn = new ConexaoFactory().conexao();
@@ -96,7 +98,7 @@ public class AprovacaoTriagemService {
             encam.setPrioridade(triagem.getPriorTriag());
             encam.setMetodoCalculo(matchResp.getMetodo_calculo());
             encam.setSttsEncam("ativo");
-            // prev_follow = 15 dias a partir de hoje (CLAUDE.md §10.2 passo 10)
+            // prev_follow = 15 dias a partir de hoje.
             encam.setPrevFollow(LocalDateTime.now().plusDays(15));
             encam.setObservacao(matchResp.getCriterio_fallback() != null ? matchResp.getCriterio_fallback() : matchResp.getObservacao());
 

@@ -88,13 +88,13 @@ public class Triagem {
     public LocalDateTime getDataAtualizacao() { return dataAtualizacao; }
     public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
 
-    // Regra obrigatória — CLAUDE.md §9.1 — elegível apenas para 11 a 17 anos
+    // Faixa de elegibilidade do Projeto Nora: adolescentes de 11 a 17 anos.
     public String definirElegibilidade(int idade) {
         if (idade >= 11 && idade <= 17) return "elegivel";
         return "inelegivel";
     }
 
-    // Regra obrigatória — CLAUDE.md §9.2 — prioridade baseada no nível de urgência da IA
+    // Prioridade calculada a partir do nível de urgência retornado pelo serviço de predição ML.
     public String calcularPrioridade(double nivelIA) {
         if (nivelIA >= 4.0) return "urgente";
         if (nivelIA >= 3.0) return "alta";

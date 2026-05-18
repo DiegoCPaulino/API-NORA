@@ -21,8 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// @ApplicationScoped é REQUISITO técnico do @Scheduled do Quarkus — única classe CDI do projeto.
-// Extensão aceitável declarada conforme CLAUDE.md §4.2 (bônus de maturidade arquitetural).
+// @ApplicationScoped é requisito técnico do @Scheduled do Quarkus — única classe CDI do projeto.
 // EncaminhamentoDao e AcompEventoBO são instanciados por new, seguindo o padrão do projeto.
 @ApplicationScoped
 public class FollowUpService {

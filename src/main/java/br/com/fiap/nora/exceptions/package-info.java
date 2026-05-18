@@ -1,2 +1,2 @@
-/** Exceções de negócio e ExceptionMappers globais (ver CLAUDE.md §4). */
+/** Exceções de negócio do Projeto Nora. */
 package br.com.fiap.nora.exceptions;

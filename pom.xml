@@ -47,7 +47,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
-        <!-- Extensão aceitável declarada — CLAUDE.md §4.2: bônus de maturidade arquitetural -->
+        <!-- quarkus-scheduler: suporte ao @Scheduled do FollowUpService (follow-up diario automatico) -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-scheduler</artifactId>

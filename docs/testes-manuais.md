@@ -83,6 +83,21 @@
 | 7 | POST /triagens/{id}/aprovar novamente (mesma triagem) | 409 "JA_PROCESSADA" |
 | 8 | POST /triagens/9999/aprovar | 404 "NAO_ENCONTRADA" |
 
+### Fluxo 3b — Aprovação sem conversa vinculada
+
+> Cenário: pessoa cadastrada presencialmente pela ONG, sem interação via bot ou chat.
+> Pré-condição: pessoa e triagem criadas, **sem** registro em TB_CONVERSA para essa pessoa.
+
+| Passo | Request | Esperado |
+|---|---|---|
+| 1 | POST /triagens/{id}/aprovar | 201 com encaminhamento criado |
+| 2 | Verificar banco: TB_PACIENTE → novo registro criado | SELECT |
+| 3 | Verificar banco: TB_ENCAMINHAMENTO → novo registro com match_auto='S' | SELECT |
+| 4 | Verificar banco: TB_CONVERSA → nenhuma linha para esse idPessoa | SELECT |
+| 5 | Log do servidor | Deve conter `Aviso: nenhuma conversa encontrada` — não é erro |
+
+**Comportamento esperado:** aprovação bem-sucedida (201). A ausência de conversa não bloqueia a transação.
+
 ---
 
 ## Fluxo 4 — Omnichannel (conversas e mensagens)

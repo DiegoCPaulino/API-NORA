@@ -73,7 +73,7 @@ public class Encaminhamento {
     public String getObservacao() { return observacao; }
     public void setObservacao(String observacao) { this.observacao = observacao; }
 
-    // Regra obrigatória — CLAUDE.md §9.4 — encerra o encaminhamento; paciente.stts_trat pendente de confirmação
+    // Encerra o encaminhamento. Atualização de stts_trat do paciente fica a cargo do fluxo de acompanhamento.
     public void encerrarEncaminhamento() {
         this.sttsEncam = "concluido";
     }

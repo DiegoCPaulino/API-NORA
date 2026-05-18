@@ -32,7 +32,7 @@ public class ConversaBO {
     }
 
     public Conversa criar(Conversa nova) throws SQLException, ClassNotFoundException {
-        // Regra de exclusividade (CLAUDE.md §10): exatamente uma FK deve estar preenchida
+        // Apenas uma FK contextual (pessoa, paciente ou dentista) deve estar preenchida.
         int fksPreenchidas = 0;
         if (nova.getIdPessoa() != null) fksPreenchidas++;
         if (nova.getIdPaciente() != null) fksPreenchidas++;
@@ -42,7 +42,7 @@ public class ConversaBO {
                     + " Conversa deve referenciar exatamente uma entre pessoa, paciente ou dentista.");
         }
 
-        // Upsert lógico: evita duplicidade conforme CLAUDE.md §16.12
+        // Upsert lógico: retorna conversa ativa existente para evitar duplicidade.
         ConversaDao dao = new ConversaDao();
         Conversa existente = buscarAtiva(dao, nova);
         if (existente != null) return existente;

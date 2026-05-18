@@ -2,7 +2,7 @@ package br.com.fiap.nora.entities;
 
 import java.time.LocalDateTime;
 
-// ATENÇÃO: apenas um dos três FKs pode estar preenchido por vez — constraint CHK_CONV_CTX_FK no Oracle (CLAUDE.md §10)
+// Apenas uma FK contextual pode estar preenchida por vez — constraint CHK_CONV_CTX_FK no Oracle.
 public class Conversa {
 
     private long idConversa;

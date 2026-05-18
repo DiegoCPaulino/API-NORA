@@ -62,7 +62,7 @@ Configurar `N8N_WEBHOOK_FOLLOWUP_URL` com a URL do webhook N8N para ativar o dis
 
 Cada disparo bem-sucedido registra um evento em `TB_ACOMP_EVENTO` com `TIPO_EVENTO = 'follow_up'` e `ORIGEM = 'sistema'`. Falha em um encaminhamento é isolada — os demais são processados normalmente.
 
-> Extensão aceitável declarada — `CLAUDE.md §4.2`. Requer `quarkus-scheduler` no `pom.xml`.
+> Requer a extensão `quarkus-scheduler` no `pom.xml`. Detalhes em `docs/deploy-render.md`.
 
 ### Comandos
 
@@ -136,8 +136,8 @@ API Python unificada em `https://api-triagens.onrender.com`. Match geográfico u
 
 ## Documentação adicional
 
+- `docs/api.md` — referência completa de endpoints (request/response/status codes)
+- `docs/testes-manuais.md` — roteiro de testes ponta a ponta
+- `docs/deploy-render.md` — checklist de deploy no Render
 - `docs/database/setup_oracle.sql` — DDL completo
 - `docs/api-collection/nora-backend.json` — coleção Postman v2.1
-- `docs/testes-manuais.md` — roteiro de testes ponta a ponta
-- `docs/decisoes-tecnicas.md` — decisões técnicas e respostas para banca
-- `docs/deploy-render.md` — checklist de deploy no Render

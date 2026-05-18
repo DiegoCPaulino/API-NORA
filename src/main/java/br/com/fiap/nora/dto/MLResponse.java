@@ -1,6 +1,6 @@
 package br.com.fiap.nora.dto;
 
-// Stub — endpoint de predicao ML nao existe na API Python atual (pendencia §11.1 CLAUDE.md)
+// Stub — endpoint de predição ML não disponível na API Python atual.
 public class MLResponse {
 
     private Double nivel_urgencia;

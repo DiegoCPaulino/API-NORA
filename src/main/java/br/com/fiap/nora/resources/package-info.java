@@ -1,2 +1,2 @@
-/** Resources JAX-RS — endpoints REST, sem regra de negócio direta (ver CLAUDE.md §7). */
+/** Resources JAX-RS — endpoints REST do Projeto Nora. */
 package br.com.fiap.nora.resources;

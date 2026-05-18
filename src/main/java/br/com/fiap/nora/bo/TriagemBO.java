@@ -45,8 +45,8 @@ public class TriagemBO {
         // Regra obrigatoria §9.1 — elegibilidade calculada pelo backend
         t.setElegTriag(t.definirElegibilidade(idadeCalculada));
 
-        // Integracao ML — endpoint nao disponivel na API Python atual (pendencia CLAUDE.md §11.1)
-        // Fallback: mantem nivelUrgIa do payload quando MLService indisponivel
+        // Integração ML — endpoint de predição não disponível na API Python atual.
+        // Fallback: mantém nivelUrgIa do payload quando MLService indisponível.
         try {
             MLRequest mlReq = new MLRequest(t.getSexoPess(), t.getIdade(), t.getProblemaBucal(), t.getRendaFamiliar());
             MLResponse mlResp = new MLService().predizerUrgencia(mlReq);

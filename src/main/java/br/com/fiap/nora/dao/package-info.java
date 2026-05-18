@@ -1,2 +1,2 @@
-/** DAOs — acesso ao Oracle via datasource Quarkus (ver CLAUDE.md §6). */
+/** DAOs — acesso ao Oracle via JDBC manual (PreparedStatement, SQL em constantes). */
 package br.com.fiap.nora.dao;

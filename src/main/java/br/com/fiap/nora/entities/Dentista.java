@@ -67,7 +67,7 @@ public class Dentista {
     public String getObservacoes() { return observacoes; }
     public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
 
-    // Regra obrigatória — CLAUDE.md §9.3 — disponível quando há vagas e status ativo
+    // Disponível quando há vagas no mês (ativos < capMensal) e o dentista está ativo.
     public boolean verificarDisponibilidade(int ativos) {
         return ativos < this.capMensal && "ativo".equals(this.sttsDent);
     }

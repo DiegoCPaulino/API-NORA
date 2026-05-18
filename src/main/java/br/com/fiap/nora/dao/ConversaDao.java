@@ -7,7 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// ATENÇÃO: a regra de exclusividade de FKs (CLAUDE.md §10) é responsabilidade da BO/Service — este DAO apenas persiste
+// A regra de exclusividade de FKs contextuais é responsabilidade da BO — este DAO apenas persiste.
 public class ConversaDao {
 
     private static final String SQL_INSERT =
@@ -22,7 +22,7 @@ public class ConversaDao {
             "SELECT * FROM TB_CONVERSA WHERE ID_CONVERSA=?";
     private static final String SQL_SELECT_BY_PESSOA =
             "SELECT * FROM TB_CONVERSA WHERE ID_PESSOA=? ORDER BY DATA_CRIACAO DESC";
-    // Migra conversa de cadastro para acomp_paciente respeitando a exclusividade de FKs (CLAUDE.md §10)
+    // Migra conversa de 'cadastro' para 'acomp_paciente': limpa FK de pessoa, preenche FK de paciente.
     private static final String SQL_ATUALIZAR_PARA_PACIENTE =
             "UPDATE TB_CONVERSA SET CONTEXTO='acomp_paciente', ID_PESSOA=NULL, ID_PACIENTE=?, DATA_ATUALIZACAO=SYSTIMESTAMP WHERE ID_CONVERSA=?";
     // Upsert lógico: conversa ativa = STTS_CONV='aberta' (único status não-terminal per DDL CHECK constraint)

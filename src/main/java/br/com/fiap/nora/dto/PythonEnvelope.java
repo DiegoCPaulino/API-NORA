@@ -2,8 +2,7 @@ package br.com.fiap.nora.dto;
 
 import java.util.List;
 
-// Envelope padrao da API Python — CLAUDE.md §12.4
-// Necessario porque o Python usa { status, code, message, data, erro } em todas as respostas
+// Envelope padrão da API Python: { status, code, message, data, erro }.
 public class PythonEnvelope<T> {
 
     private boolean status;
