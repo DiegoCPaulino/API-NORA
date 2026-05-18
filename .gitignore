@@ -1,0 +1,146 @@
+target/
+.classpath
+.project
+.settings/
+.factorypath
+
+*.class
+*.war
+*.ear
+*.nar
+
+# Artefatos JAR gerados fora do target
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Quarkus / JVM / execução local
+.quarkus/
+*-runner
+*-runner.jar
+hs_err_pid*
+replay_pid*
+.attach_pid*
+
+# ============================================================
+# Maven Wrapper — manter versionado
+# ============================================================
+!mvnw
+!mvnw.cmd
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+!.mvn/wrapper/maven-wrapper.jar
+
+# ============================================================
+# IDEs e editores
+# ============================================================
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# ============================================================
+# Sistema operacional
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Ambiente, credenciais e segredos
+# ============================================================
+.env
+.env.*
+!.env.example
+
+application-local.properties
+application-dev.properties
+application-prod.properties
+
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.crt
+*.cer
+
+# ============================================================
+# Logs e temporários
+# ============================================================
+*.log
+logs/
+log/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# ============================================================
+# Oracle / banco / exports locais
+# ============================================================
+*.dmp
+*.trc
+*.trm
+*.ctl
+*.exp
+*.export
+exports/
+db_exports/
+sql_exports/
+
+# Scripts SQL oficiais devem continuar versionados
+!docs/database/*.sql
+
+# ============================================================
+# IA / Claude / ChatGPT / assistentes locais
+# ============================================================
+CLAUDE.md
+claude.md
+cloud.md
+CLOUD.md
+
+.claude/
+.aider*
+.cursor/
+.continue/
+
+prompts/
+prompt-local/
+rascunhos-ia/
+ia-logs/
+ai-logs/
+
+*.prompt.md
+*.prompt.txt
+
+# ============================================================
+# Backups, compactados e cópias locais
+# ============================================================
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+backup/
+backups/
+*_backup.*
+*_old.*
+*.bak
+
+# Evita arrastar metadados de repositórios copiados em subpastas
+**/.git/
+
+# ============================================================
+# Arquivos que devem continuar versionados
+# ============================================================
+!.env.example
+!README.md
+!pom.xml
+!docs/
+!src/
