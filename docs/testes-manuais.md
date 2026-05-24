@@ -2,7 +2,7 @@
 
 ---
 
-## Configuração do Postman
+## Configuração do Postman ou Insomnia
 
 ### 1. Importar a coleção
 
@@ -18,11 +18,11 @@ A coleção já inclui:
 
 Após importar, clicar em **Nora Backend Java → Variables** e preencher:
 
-| Variável | Current Value | Observação |
-|---|---|---|
-| `baseUrl` | `http://localhost:10000` | Já preenchida |
-| `devEmail` | *(email do colaborador)* | **Não versionar** |
-| `devSenha` | *(senha do colaborador)* | **Não versionar** |
+| Variável | Current Value | Observação                 |
+|---|---|----------------------------|
+| `baseUrl` | `http://localhost:10000` | Já preenchida              |
+| `devEmail` | *(email do colaborador)* | **Não versionado**         |
+| `devSenha` | *(senha do colaborador)* | **Não versionado**          |
 | `token` | *(deixar vazio)* | Preenchido automaticamente |
 
 > Para produção, alterar `baseUrl` para a URL do Render.
@@ -85,7 +85,6 @@ if (!token) {
 
 - Aplicação rodando em `http://localhost:10000` (ou URL do Render em produção)
 - Oracle FIAP acessível com env vars configuradas
-- `API_PYTHON_BASE_URL` configurada (ou vazia para testar fallback)
 - Coleção `docs/api-collection/nora-backend.json` importada no Postman (ver "Configuração do Postman" acima)
 - Variáveis `devEmail` e `devSenha` preenchidas localmente na coleção
 - Pelo menos 1 colaborador cadastrado em TB_COLABORADOR
@@ -271,7 +270,6 @@ if (!token) {
 | 4 | Verificar banco: TB_ACOMP_EVENTO | Novo evento com `TP_EVENTO = 'followup'` e `ORIGEM = 'sistema'` |
 | 5 | POST /follow-up/executar novamente (mesmo encaminhamento ativo) | 200 — segue processando (sem idempotência: dispara novamente) |
 
-> **Limitação:** `PREV_FOLLOW` não é atualizado após o disparo. O encaminhamento continua elegível nas próximas execuções enquanto `STTS_ENCAM = 'ativo'`. O N8N deve tratar duplicidade, ou o colaborador deve atualizar o status do encaminhamento.
 
 ---
 
@@ -289,18 +287,3 @@ if (!token) {
 | Evento com tipo inválido | POST /acomp_evento tipoEvento="inexistente" | 422 |
 | Sem dentista disponível no banco | POST /triagens/{id}/aprovar | 422 |
 
----
-
-## Checklist de evidências para banca
-
-- [ ] Captura: POST /auth/login bem-sucedido (200 com token)
-- [ ] Captura: POST /triagens bem-sucedido (201 com elegibilidade e prioridade calculadas)
-- [ ] Captura: POST /triagens/{id}/aprovar bem-sucedido (201 com encaminhamento)
-- [ ] Captura: POST /triagens/{id}/aprovar duplicado (409)
-- [ ] Captura: GET /metricas/resumo (200 com chaves totalLeads, taxaAprovacao, etc.)
-- [ ] Captura: GET /metricas/triagens-por-status (200 com objeto plano)
-- [ ] Captura: POST /acomp_evento (201)
-- [ ] Captura: POST /follow-up/executar (200 com mensagem de confirmação)
-- [ ] SELECTs no Oracle antes e depois da aprovação (TB_TRIAGEM, TB_PACIENTE, TB_CONVERSA, TB_ENCAMINHAMENTO)
-- [ ] Logs do console mostrando `[AprovacaoTriagemService]` e chamada ao MatchService
-- [ ] GET /q/health em produção (Render)

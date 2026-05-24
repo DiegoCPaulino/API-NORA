@@ -56,6 +56,8 @@ desktop.ini
 .env.*
 !.env.example
 
+deploy-render.md
+
 application-local.properties
 application-dev.properties
 application-prod.properties
@@ -99,6 +101,7 @@ sql_exports/
 # IA / Claude / ChatGPT / assistentes locais
 # ============================================================
 CLAUDE.md
+.claude
 
 # ============================================================
 # Backups, compactados e cópias locais
