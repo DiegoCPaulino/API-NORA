@@ -99,24 +99,6 @@ sql_exports/
 # IA / Claude / ChatGPT / assistentes locais
 # ============================================================
 CLAUDE.md
-claude.md
-cloud.md
-CLOUD.md
-
-.claude/
-.cloud/
-.aider*
-.cursor/
-.continue/
-
-prompts/
-prompt-local/
-rascunhos-ia/
-ia-logs/
-ai-logs/
-
-*.prompt.md
-*.prompt.txt
 
 # ============================================================
 # Backups, compactados e cópias locais
