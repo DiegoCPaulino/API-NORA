@@ -1,37 +1,35 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import java.time.LocalDate;
 
 public class Mensagem {
 
-    private long idMensagem;
-    private long idConversa;
+    private Long idMens;
     private String enviadoPor;
     private String direcao;
     private String conteudo;
-    private String tipoMensagem;
-    private LocalDateTime dataEnvio;
-    private String lida;
+    @JsonAlias({"tipoMensagem", "tipoMens", "tipo_mensagem"})
+    private String tpMens;
+    private LocalDate dtEnvio;
+    @JsonAlias({"idConversa", "conversaId"})
+    private Long fkConvId;
 
     public Mensagem() {}
 
-    public Mensagem(long idMensagem, long idConversa, String enviadoPor, String direcao,
-                    String conteudo, String tipoMensagem, LocalDateTime dataEnvio, String lida) {
-        this.idMensagem = idMensagem;
-        this.idConversa = idConversa;
+    public Mensagem(Long idMens, String enviadoPor, String direcao, String conteudo,
+                    String tpMens, LocalDate dtEnvio, Long fkConvId) {
+        this.idMens = idMens;
         this.enviadoPor = enviadoPor;
         this.direcao = direcao;
         this.conteudo = conteudo;
-        this.tipoMensagem = tipoMensagem;
-        this.dataEnvio = dataEnvio;
-        this.lida = lida;
+        this.tpMens = tpMens;
+        this.dtEnvio = dtEnvio;
+        this.fkConvId = fkConvId;
     }
 
-    public long getIdMensagem() { return idMensagem; }
-    public void setIdMensagem(long idMensagem) { this.idMensagem = idMensagem; }
-
-    public long getIdConversa() { return idConversa; }
-    public void setIdConversa(long idConversa) { this.idConversa = idConversa; }
+    public Long getIdMens() { return idMens; }
+    public void setIdMens(Long idMens) { this.idMens = idMens; }
 
     public String getEnviadoPor() { return enviadoPor; }
     public void setEnviadoPor(String enviadoPor) { this.enviadoPor = enviadoPor; }
@@ -42,19 +40,19 @@ public class Mensagem {
     public String getConteudo() { return conteudo; }
     public void setConteudo(String conteudo) { this.conteudo = conteudo; }
 
-    public String getTipoMensagem() { return tipoMensagem; }
-    public void setTipoMensagem(String tipoMensagem) { this.tipoMensagem = tipoMensagem; }
+    public String getTpMens() { return tpMens; }
+    public void setTpMens(String tpMens) { this.tpMens = tpMens; }
 
-    public LocalDateTime getDataEnvio() { return dataEnvio; }
-    public void setDataEnvio(LocalDateTime dataEnvio) { this.dataEnvio = dataEnvio; }
+    public LocalDate getDtEnvio() { return dtEnvio; }
+    public void setDtEnvio(LocalDate dtEnvio) { this.dtEnvio = dtEnvio; }
 
-    public String getLida() { return lida; }
-    public void setLida(String lida) { this.lida = lida; }
+    public Long getFkConvId() { return fkConvId; }
+    public void setFkConvId(Long fkConvId) { this.fkConvId = fkConvId; }
 
     @Override
     public String toString() {
-        return "Mensagem{idMensagem=" + idMensagem + "\nidConversa=" + idConversa
+        return "Mensagem{idMens=" + idMens + "\nfkConvId=" + fkConvId
                 + "\nenviadoPor=" + enviadoPor + "\ndirecao=" + direcao
-                + "\ntipoMensagem=" + tipoMensagem + "}";
+                + "\ntpMens=" + tpMens + "}";
     }
 }

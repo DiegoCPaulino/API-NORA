@@ -1,54 +1,91 @@
 package br.com.fiap.nora.bo;
 
+import br.com.fiap.nora.conexoes.ConexaoFactory;
 import br.com.fiap.nora.dao.PessoaDao;
 import br.com.fiap.nora.dao.TriagemDao;
 import br.com.fiap.nora.dto.MLRequest;
 import br.com.fiap.nora.dto.MLResponse;
+import br.com.fiap.nora.dto.response.TriagemResponseDTO;
 import br.com.fiap.nora.entities.Pessoa;
 import br.com.fiap.nora.entities.Triagem;
 import br.com.fiap.nora.exceptions.PythonApiException;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
+import br.com.fiap.nora.mapper.TriagemMapper;
 import br.com.fiap.nora.services.MLService;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class TriagemBO {
 
-    public List<Triagem> listar() throws SQLException, ClassNotFoundException {
-        return new TriagemDao().selecionar();
+    private static final Set<String> STTS_TRIAG_VALIDOS = new HashSet<>(
+            Arrays.asList("em_analise", "aprovada", "encerrada", "inativa"));
+    private static final Set<String> DECISAO_VALIDOS = new HashSet<>(
+            Arrays.asList("aprovado", "encerrado", "reanalise"));
+    private static final Set<String> SEXO_VALIDOS = new HashSet<>(Arrays.asList("M", "F"));
+    private static final Set<String> RENDA_VALIDOS = new HashSet<>(
+            Arrays.asList("ate_1sm", "1_3sm", "acima_3sm"));
+
+    public List<TriagemResponseDTO> listar() throws SQLException, ClassNotFoundException {
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            List<Triagem> triagens = new TriagemDao(conn).selecionar();
+            List<TriagemResponseDTO> resultado = new ArrayList<>();
+            for (Triagem t : triagens) {
+                resultado.add(TriagemMapper.toResponse(t));
+            }
+            return resultado;
+        }
     }
 
-    public Triagem buscarPorId(long id) throws SQLException, ClassNotFoundException {
-        return new TriagemDao().buscarPorId(id);
+    public TriagemResponseDTO buscarPorId(long id) throws SQLException, ClassNotFoundException {
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            Triagem triagem = new TriagemDao(conn).buscarPorId(id);
+            return TriagemMapper.toResponse(triagem);
+        }
     }
 
-    public String criar(Triagem t) throws SQLException, ClassNotFoundException {
+    public TriagemResponseDTO criar(Triagem t) throws SQLException, ClassNotFoundException {
         // Regra de negocios
-        if (t.getIdPessoa() <= 0) {
+        if (t.getFkPessId() == null || t.getFkPessId() <= 0) {
             throw new IllegalArgumentException("ID da pessoa obrigatorio.");
         }
         if (t.getProblemaBucal() == null || t.getProblemaBucal().isBlank()) {
             throw new IllegalArgumentException("Problema bucal obrigatorio.");
         }
-
-        Pessoa pessoa = new PessoaDao().buscarPorId(t.getIdPessoa());
-        if (pessoa == null) {
-            throw new RegraNegocioException("Pessoa nao encontrada para a triagem.");
+        if (t.getSexoPess() != null && !t.getSexoPess().isBlank()
+                && !SEXO_VALIDOS.contains(t.getSexoPess())) {
+            throw new IllegalArgumentException("sexo invalido. Use: M, F.");
         }
-        // Idade e calculada do backend; payload e ignorado
-        int idadeCalculada = Period.between(pessoa.getDataNascimento(), LocalDate.now()).getYears();
-        t.setIdade(idadeCalculada);
+        if (t.getRendaFamiliar() != null && !t.getRendaFamiliar().isBlank()
+                && !RENDA_VALIDOS.contains(t.getRendaFamiliar())) {
+            throw new IllegalArgumentException("rendaFamiliar invalida. Use: ate_1sm, 1_3sm, acima_3sm.");
+        }
 
-        // Regra obrigatoria §9.1 — elegibilidade calculada pelo backend
+        // Busca pessoa para calcular idade — conexao fechada antes da chamada ML
+        int idadeCalculada;
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            Pessoa pessoa = new PessoaDao(conn).buscarPorId(t.getFkPessId());
+            if (pessoa == null) {
+                throw new RegraNegocioException("Pessoa nao encontrada para a triagem.");
+            }
+            idadeCalculada = Period.between(pessoa.getDtNasc(), LocalDate.now()).getYears();
+        }
+
+        // Elegibilidade calculada pelo backend — payload ignorado (§8.1)
         t.setElegTriag(t.definirElegibilidade(idadeCalculada));
 
-        // Integração ML — endpoint de predição não disponível na API Python atual.
-        // Fallback: mantém nivelUrgIa do payload quando MLService indisponível.
+        // Chamada ML sem conexao Oracle aberta
+        t.setNivelUrgIa(null);
+        t.setConfIa(null);
         try {
-            MLRequest mlReq = new MLRequest(t.getSexoPess(), t.getIdade(), t.getProblemaBucal(), t.getRendaFamiliar());
+            MLRequest mlReq = new MLRequest(t.getSexoPess(), idadeCalculada, t.getProblemaBucal(), t.getRendaFamiliar());
             MLResponse mlResp = new MLService().predizerUrgencia(mlReq);
             if (mlResp != null && mlResp.getNivel_urgencia() != null) {
                 t.setNivelUrgIa(mlResp.getNivel_urgencia());
@@ -58,25 +95,48 @@ public class TriagemBO {
             System.err.println("[TriagemBO] MLService indisponivel: " + e.getMessage());
         }
 
-        // Regra obrigatoria §9.2 — prioridade via nivel IA quando disponivel; padrao baixa
+        // Prioridade via nivel IA; fallback sempre baixa quando ML indisponivel (§8.2)
         if (t.getNivelUrgIa() != null) {
             t.setPriorTriag(t.calcularPrioridade(t.getNivelUrgIa()));
-        } else if (t.getPriorTriag() == null || t.getPriorTriag().isBlank()) {
+        } else {
             t.setPriorTriag("baixa");
         }
 
-        if (t.getSttsTriag() == null || t.getSttsTriag().isBlank()) t.setSttsTriag("em_analise");
-        if (t.getDecisao() == null || t.getDecisao().isBlank()) t.setDecisao("pendente");
+        t.setSttsTriag("em_analise");
+        t.setDecisao(null);
 
-        return new TriagemDao().inserir(t);
+        // Persiste e retorna — nova conexao aberta e fechada
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            long idTriag = new TriagemDao(conn).inserirRetornandoId(t);
+            Triagem criada = new TriagemDao(conn).buscarPorId(idTriag);
+            return TriagemMapper.toResponse(criada);
+        }
     }
 
-    public String atualizar(Triagem t) throws SQLException, ClassNotFoundException {
-        // Regra de negocios
-        // Recalcula prioridade se nivelUrgIa foi atualizado
-        if (t.getNivelUrgIa() != null) {
-            t.setPriorTriag(t.calcularPrioridade(t.getNivelUrgIa()));
+    // PUT /triagens/{id} — atualiza somente stts_triag e decisao; nenhum outro campo tocado
+    public TriagemResponseDTO atualizarStatus(long id, String sttsTriag, String decisao)
+            throws SQLException, ClassNotFoundException {
+        if (sttsTriag == null || sttsTriag.isBlank()) {
+            throw new IllegalArgumentException("status obrigatorio.");
         }
-        return new TriagemDao().atualizar(t);
+        if (!STTS_TRIAG_VALIDOS.contains(sttsTriag)) {
+            throw new IllegalArgumentException(
+                    "status invalido. Use: em_analise, aprovada, encerrada, inativa.");
+        }
+        if (decisao != null && !decisao.isBlank() && !DECISAO_VALIDOS.contains(decisao)) {
+            throw new IllegalArgumentException(
+                    "decisao invalida. Use: aprovado, encerrado, reanalise.");
+        }
+
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            Triagem triagem = new TriagemDao(conn).buscarPorId(id);
+            if (triagem == null) return null;
+
+            String decisaoFinal = (decisao != null && !decisao.isBlank()) ? decisao : null;
+            new TriagemDao(conn).atualizarStatus(id, sttsTriag, decisaoFinal);
+
+            Triagem atualizada = new TriagemDao(conn).buscarPorId(id);
+            return TriagemMapper.toResponse(atualizada);
+        }
     }
 }

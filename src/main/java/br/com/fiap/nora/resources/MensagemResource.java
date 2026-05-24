@@ -2,6 +2,7 @@ package br.com.fiap.nora.resources;
 
 import br.com.fiap.nora.bo.MensagemBO;
 import br.com.fiap.nora.dto.ErroResponse;
+import br.com.fiap.nora.dto.response.MensagemDTO;
 import br.com.fiap.nora.entities.Mensagem;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
 import jakarta.ws.rs.Consumes;
@@ -23,10 +24,10 @@ public class MensagemResource {
     @POST
     public Response criar(Mensagem mensagem, @Context UriInfo uriInfo) {
         try {
-            Mensagem resultado = bo.criar(mensagem);
+            MensagemDTO dto = bo.criar(mensagem);
             return Response.created(
-                    uriInfo.getAbsolutePathBuilder().path(String.valueOf(resultado.getIdMensagem())).build()
-            ).entity(resultado).build();
+                    uriInfo.getAbsolutePathBuilder().path(String.valueOf(dto.getId())).build()
+            ).entity(dto).build();
         } catch (RegraNegocioException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.startsWith(MensagemBO.PREFIXO_NAO_ENCONTRADA)) {

@@ -1,80 +1,74 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public class Dentista {
 
-    private long idDentista;
-    private long idEndereco;
-    private String nome;
-    private String cro;
-    private String email;
-    private String telefone;
-    private String sttsDent;
+    private Long idDent;
+    private String nmDent;
+    private String croDent;
+    private String telDent;
+    private String emailDent;
+    private String tgChatId;
     private int capMensal;
-    private int ativos;
-    private LocalDateTime dataCadastro;
-    private String observacoes;
+    private String sttsDent;
+    private LocalDate dtCred;
+    private Long fkEndId;
 
     public Dentista() {}
 
-    public Dentista(long idDentista, long idEndereco, String nome, String cro, String email,
-                    String telefone, String sttsDent, int capMensal, int ativos,
-                    LocalDateTime dataCadastro, String observacoes) {
-        this.idDentista = idDentista;
-        this.idEndereco = idEndereco;
-        this.nome = nome;
-        this.cro = cro;
-        this.email = email;
-        this.telefone = telefone;
-        this.sttsDent = sttsDent;
+    public Dentista(Long idDent, String nmDent, String croDent, String telDent, String emailDent,
+                    String tgChatId, int capMensal, String sttsDent, LocalDate dtCred, Long fkEndId) {
+        this.idDent = idDent;
+        this.nmDent = nmDent;
+        this.croDent = croDent;
+        this.telDent = telDent;
+        this.emailDent = emailDent;
+        this.tgChatId = tgChatId;
         this.capMensal = capMensal;
-        this.ativos = ativos;
-        this.dataCadastro = dataCadastro;
-        this.observacoes = observacoes;
+        this.sttsDent = sttsDent;
+        this.dtCred = dtCred;
+        this.fkEndId = fkEndId;
     }
 
-    public long getIdDentista() { return idDentista; }
-    public void setIdDentista(long idDentista) { this.idDentista = idDentista; }
+    public Long getIdDent() { return idDent; }
+    public void setIdDent(Long idDent) { this.idDent = idDent; }
 
-    public long getIdEndereco() { return idEndereco; }
-    public void setIdEndereco(long idEndereco) { this.idEndereco = idEndereco; }
+    public String getNmDent() { return nmDent; }
+    public void setNmDent(String nmDent) { this.nmDent = nmDent; }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public String getCroDent() { return croDent; }
+    public void setCroDent(String croDent) { this.croDent = croDent; }
 
-    public String getCro() { return cro; }
-    public void setCro(String cro) { this.cro = cro; }
+    public String getTelDent() { return telDent; }
+    public void setTelDent(String telDent) { this.telDent = telDent; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getEmailDent() { return emailDent; }
+    public void setEmailDent(String emailDent) { this.emailDent = emailDent; }
 
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-
-    public String getSttsDent() { return sttsDent; }
-    public void setSttsDent(String sttsDent) { this.sttsDent = sttsDent; }
+    public String getTgChatId() { return tgChatId; }
+    public void setTgChatId(String tgChatId) { this.tgChatId = tgChatId; }
 
     public int getCapMensal() { return capMensal; }
     public void setCapMensal(int capMensal) { this.capMensal = capMensal; }
 
-    public int getAtivos() { return ativos; }
-    public void setAtivos(int ativos) { this.ativos = ativos; }
+    public String getSttsDent() { return sttsDent; }
+    public void setSttsDent(String sttsDent) { this.sttsDent = sttsDent; }
 
-    public LocalDateTime getDataCadastro() { return dataCadastro; }
-    public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }
+    public LocalDate getDtCred() { return dtCred; }
+    public void setDtCred(LocalDate dtCred) { this.dtCred = dtCred; }
 
-    public String getObservacoes() { return observacoes; }
-    public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
+    public Long getFkEndId() { return fkEndId; }
+    public void setFkEndId(Long fkEndId) { this.fkEndId = fkEndId; }
 
-    // Disponível quando há vagas no mês (ativos < capMensal) e o dentista está ativo.
+    // ativos e calculado externamente (COUNT de encaminhamentos ativos) — nao existe coluna ATIVOS na tabela
     public boolean verificarDisponibilidade(int ativos) {
         return ativos < this.capMensal && "ativo".equals(this.sttsDent);
     }
 
     @Override
     public String toString() {
-        return "Dentista{idDentista=" + idDentista + "\nnome=" + nome + "\ncro=" + cro
-                + "\nsttsDent=" + sttsDent + "\ncapMensal=" + capMensal + "\nativos=" + ativos + "}";
+        return "Dentista{idDent=" + idDent + "\nnmDent=" + nmDent + "\ncroDent=" + croDent
+                + "\nsttsDent=" + sttsDent + "\ncapMensal=" + capMensal + "}";
     }
 }

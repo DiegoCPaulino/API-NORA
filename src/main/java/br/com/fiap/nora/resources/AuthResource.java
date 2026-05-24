@@ -23,12 +23,18 @@ public class AuthResource {
     @Path("/login")
     public Response login(LoginRequest request) {
         try {
-            LoginResponse response = authBO.login(request.getEmail(), request.getSenha());
+            // Aceita email (com @) ou login (nm_login). email tem prioridade se ambos forem enviados.
+            String identificador = (request.getEmail() != null && !request.getEmail().isBlank())
+                    ? request.getEmail()
+                    : request.getLogin();
+            LoginResponse response = authBO.login(identificador, request.getSenha());
             if (response == null) {
                 return Response.status(401).entity(new ErroResponse("Credenciais invalidas.")).build();
             }
             return Response.ok(response).build();
-        } catch (RegraNegocioException | IllegalArgumentException e) {
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
+        } catch (RegraNegocioException e) {
             return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
         } catch (Exception e) {
             e.printStackTrace();

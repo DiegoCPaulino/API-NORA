@@ -2,35 +2,29 @@ package br.com.fiap.nora.entities;
 
 public class Especialidade {
 
-    private long idEspecialidade;
-    private String nome;
-    private String descricao;
-    private String statusEsp;
+    private Long idEspec;
+    private String nmEspec;
+    private String dsEspec;
 
     public Especialidade() {}
 
-    public Especialidade(long idEspecialidade, String nome, String descricao, String statusEsp) {
-        this.idEspecialidade = idEspecialidade;
-        this.nome = nome;
-        this.descricao = descricao;
-        this.statusEsp = statusEsp;
+    public Especialidade(Long idEspec, String nmEspec, String dsEspec) {
+        this.idEspec = idEspec;
+        this.nmEspec = nmEspec;
+        this.dsEspec = dsEspec;
     }
 
-    public long getIdEspecialidade() { return idEspecialidade; }
-    public void setIdEspecialidade(long idEspecialidade) { this.idEspecialidade = idEspecialidade; }
+    public Long getIdEspec() { return idEspec; }
+    public void setIdEspec(Long idEspec) { this.idEspec = idEspec; }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public String getNmEspec() { return nmEspec; }
+    public void setNmEspec(String nmEspec) { this.nmEspec = nmEspec; }
 
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
-
-    public String getStatusEsp() { return statusEsp; }
-    public void setStatusEsp(String statusEsp) { this.statusEsp = statusEsp; }
+    public String getDsEspec() { return dsEspec; }
+    public void setDsEspec(String dsEspec) { this.dsEspec = dsEspec; }
 
     @Override
     public String toString() {
-        return "Especialidade{idEspecialidade=" + idEspecialidade + "\nnome=" + nome
-                + "\nstatusEsp=" + statusEsp + "}";
+        return "Especialidade{idEspec=" + idEspec + "\nnmEspec=" + nmEspec + "}";
     }
 }

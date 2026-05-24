@@ -1,34 +1,41 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.LocalDate;
 
 public class Triagem {
 
-    private long idTriagem;
-    private long idPessoa;
-    private int idade;
+    private Long idTriag;
     private String elegTriag;
     private String priorTriag;
+    @JsonAlias("sexo")
     private String sexoPess;
     private String problemaBucal;
     private String rendaFamiliar;
     private Double nivelUrgIa;
     private Double confIa;
+    private String sugestaoIa;
+    @JsonProperty("observacoes")
+    @JsonAlias({"obsTriag", "obs_triag"})
+    private String obsTriag;
+    private LocalDate dtTriag;
+    @JsonProperty("status")
+    @JsonAlias({"sttsTriag", "stts_triag"})
     private String sttsTriag;
     private String decisao;
-    private String observacoes;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    @JsonProperty("pessoaId")
+    @JsonAlias("fkPessId")
+    private Long fkPessId;
+    private Long fkUserId;
 
     public Triagem() {}
 
-    public Triagem(long idTriagem, long idPessoa, int idade, String elegTriag, String priorTriag,
-                   String sexoPess, String problemaBucal, String rendaFamiliar, Double nivelUrgIa,
-                   Double confIa, String sttsTriag, String decisao, String observacoes,
-                   LocalDateTime dataCriacao, LocalDateTime dataAtualizacao) {
-        this.idTriagem = idTriagem;
-        this.idPessoa = idPessoa;
-        this.idade = idade;
+    public Triagem(Long idTriag, String elegTriag, String priorTriag, String sexoPess,
+                   String problemaBucal, String rendaFamiliar, Double nivelUrgIa, Double confIa,
+                   String sugestaoIa, String obsTriag, LocalDate dtTriag, String sttsTriag,
+                   String decisao, Long fkPessId, Long fkUserId) {
+        this.idTriag = idTriag;
         this.elegTriag = elegTriag;
         this.priorTriag = priorTriag;
         this.sexoPess = sexoPess;
@@ -36,21 +43,17 @@ public class Triagem {
         this.rendaFamiliar = rendaFamiliar;
         this.nivelUrgIa = nivelUrgIa;
         this.confIa = confIa;
+        this.sugestaoIa = sugestaoIa;
+        this.obsTriag = obsTriag;
+        this.dtTriag = dtTriag;
         this.sttsTriag = sttsTriag;
         this.decisao = decisao;
-        this.observacoes = observacoes;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.fkPessId = fkPessId;
+        this.fkUserId = fkUserId;
     }
 
-    public long getIdTriagem() { return idTriagem; }
-    public void setIdTriagem(long idTriagem) { this.idTriagem = idTriagem; }
-
-    public long getIdPessoa() { return idPessoa; }
-    public void setIdPessoa(long idPessoa) { this.idPessoa = idPessoa; }
-
-    public int getIdade() { return idade; }
-    public void setIdade(int idade) { this.idade = idade; }
+    public Long getIdTriag() { return idTriag; }
+    public void setIdTriag(Long idTriag) { this.idTriag = idTriag; }
 
     public String getElegTriag() { return elegTriag; }
     public void setElegTriag(String elegTriag) { this.elegTriag = elegTriag; }
@@ -73,20 +76,26 @@ public class Triagem {
     public Double getConfIa() { return confIa; }
     public void setConfIa(Double confIa) { this.confIa = confIa; }
 
+    public String getSugestaoIa() { return sugestaoIa; }
+    public void setSugestaoIa(String sugestaoIa) { this.sugestaoIa = sugestaoIa; }
+
+    public String getObsTriag() { return obsTriag; }
+    public void setObsTriag(String obsTriag) { this.obsTriag = obsTriag; }
+
+    public LocalDate getDtTriag() { return dtTriag; }
+    public void setDtTriag(LocalDate dtTriag) { this.dtTriag = dtTriag; }
+
     public String getSttsTriag() { return sttsTriag; }
     public void setSttsTriag(String sttsTriag) { this.sttsTriag = sttsTriag; }
 
     public String getDecisao() { return decisao; }
     public void setDecisao(String decisao) { this.decisao = decisao; }
 
-    public String getObservacoes() { return observacoes; }
-    public void setObservacoes(String observacoes) { this.observacoes = observacoes; }
+    public Long getFkPessId() { return fkPessId; }
+    public void setFkPessId(Long fkPessId) { this.fkPessId = fkPessId; }
 
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
-
-    public LocalDateTime getDataAtualizacao() { return dataAtualizacao; }
-    public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
+    public Long getFkUserId() { return fkUserId; }
+    public void setFkUserId(Long fkUserId) { this.fkUserId = fkUserId; }
 
     // Faixa de elegibilidade do Projeto Nora: adolescentes de 11 a 17 anos.
     public String definirElegibilidade(int idade) {
@@ -94,7 +103,7 @@ public class Triagem {
         return "inelegivel";
     }
 
-    // Prioridade calculada a partir do nível de urgência retornado pelo serviço de predição ML.
+    // Prioridade calculada a partir do nivel de urgencia retornado pelo servico de predicao ML.
     public String calcularPrioridade(double nivelIA) {
         if (nivelIA >= 4.0) return "urgente";
         if (nivelIA >= 3.0) return "alta";
@@ -104,7 +113,7 @@ public class Triagem {
 
     @Override
     public String toString() {
-        return "Triagem{idTriagem=" + idTriagem + "\nidPessoa=" + idPessoa + "\nidade=" + idade
+        return "Triagem{idTriag=" + idTriag + "\nfkPessId=" + fkPessId
                 + "\nelegTriag=" + elegTriag + "\npriorTriag=" + priorTriag
                 + "\nsttsTriag=" + sttsTriag + "\ndecisao=" + decisao + "}";
     }

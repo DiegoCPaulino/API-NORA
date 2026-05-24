@@ -1,41 +1,45 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import java.time.LocalDate;
 
 public class AcompEvento {
 
-    private long idAcompEvento;
-    private long idEncaminhamento;
-    private String tipoEvento;
+    private Long idAcomp;
+    @JsonAlias({"tipoEvento", "tipo_evento"})
+    private String tpEvento;
     private String dsEvento;
     private String origem;
+    private LocalDate dtEvento;
     private String resumoIa;
-    private String tipoMensagem;
-    private LocalDateTime dataEvento;
+    @JsonAlias({"tipoMensagem", "tipo_mensagem"})
+    private String tpMensagem;
+    @JsonAlias({"idEncaminhamento", "encaminhamentoId", "fk_encam_id"})
+    private Long fkEncamId;
+    @JsonAlias({"idUsuario", "usuarioId", "fk_user_id"})
+    private Long fkUserId;
 
     public AcompEvento() {}
 
-    public AcompEvento(long idAcompEvento, long idEncaminhamento, String tipoEvento,
-                       String dsEvento, String origem, String resumoIa,
-                       String tipoMensagem, LocalDateTime dataEvento) {
-        this.idAcompEvento = idAcompEvento;
-        this.idEncaminhamento = idEncaminhamento;
-        this.tipoEvento = tipoEvento;
+    public AcompEvento(Long idAcomp, String tpEvento, String dsEvento, String origem,
+                       LocalDate dtEvento, String resumoIa, String tpMensagem,
+                       Long fkEncamId, Long fkUserId) {
+        this.idAcomp = idAcomp;
+        this.tpEvento = tpEvento;
         this.dsEvento = dsEvento;
         this.origem = origem;
+        this.dtEvento = dtEvento;
         this.resumoIa = resumoIa;
-        this.tipoMensagem = tipoMensagem;
-        this.dataEvento = dataEvento;
+        this.tpMensagem = tpMensagem;
+        this.fkEncamId = fkEncamId;
+        this.fkUserId = fkUserId;
     }
 
-    public long getIdAcompEvento() { return idAcompEvento; }
-    public void setIdAcompEvento(long idAcompEvento) { this.idAcompEvento = idAcompEvento; }
+    public Long getIdAcomp() { return idAcomp; }
+    public void setIdAcomp(Long idAcomp) { this.idAcomp = idAcomp; }
 
-    public long getIdEncaminhamento() { return idEncaminhamento; }
-    public void setIdEncaminhamento(long idEncaminhamento) { this.idEncaminhamento = idEncaminhamento; }
-
-    public String getTipoEvento() { return tipoEvento; }
-    public void setTipoEvento(String tipoEvento) { this.tipoEvento = tipoEvento; }
+    public String getTpEvento() { return tpEvento; }
+    public void setTpEvento(String tpEvento) { this.tpEvento = tpEvento; }
 
     public String getDsEvento() { return dsEvento; }
     public void setDsEvento(String dsEvento) { this.dsEvento = dsEvento; }
@@ -43,18 +47,24 @@ public class AcompEvento {
     public String getOrigem() { return origem; }
     public void setOrigem(String origem) { this.origem = origem; }
 
+    public LocalDate getDtEvento() { return dtEvento; }
+    public void setDtEvento(LocalDate dtEvento) { this.dtEvento = dtEvento; }
+
     public String getResumoIa() { return resumoIa; }
     public void setResumoIa(String resumoIa) { this.resumoIa = resumoIa; }
 
-    public String getTipoMensagem() { return tipoMensagem; }
-    public void setTipoMensagem(String tipoMensagem) { this.tipoMensagem = tipoMensagem; }
+    public String getTpMensagem() { return tpMensagem; }
+    public void setTpMensagem(String tpMensagem) { this.tpMensagem = tpMensagem; }
 
-    public LocalDateTime getDataEvento() { return dataEvento; }
-    public void setDataEvento(LocalDateTime dataEvento) { this.dataEvento = dataEvento; }
+    public Long getFkEncamId() { return fkEncamId; }
+    public void setFkEncamId(Long fkEncamId) { this.fkEncamId = fkEncamId; }
+
+    public Long getFkUserId() { return fkUserId; }
+    public void setFkUserId(Long fkUserId) { this.fkUserId = fkUserId; }
 
     @Override
     public String toString() {
-        return "AcompEvento{idAcompEvento=" + idAcompEvento + "\nidEncaminhamento=" + idEncaminhamento
-                + "\ntipoEvento=" + tipoEvento + "\norigem=" + origem + "}";
+        return "AcompEvento{idAcomp=" + idAcomp + "\nfkEncamId=" + fkEncamId
+                + "\ntpEvento=" + tpEvento + "\norigem=" + origem + "}";
     }
 }

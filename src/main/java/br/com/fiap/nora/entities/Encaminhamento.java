@@ -1,59 +1,62 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import java.time.LocalDate;
 
 public class Encaminhamento {
 
-    private long idEncaminhamento;
-    private long idPaciente;
-    private long idDentista;
-    private long idTriagem;
-    private LocalDateTime dtEncam;
-    private LocalDateTime prevFollow;
+    private Long idEncam;
+    private LocalDate dtEncam;
+    @JsonAlias({"prioridade", "prior_encam"})
+    private String priorEncam;
+    private String obsEncam;
+    @JsonAlias({"previsaoFollowUp", "prev_follow"})
+    private LocalDate prevFollow;
+    @JsonAlias({"status", "stts_encam"})
     private String sttsEncam;
+    @JsonAlias("match_auto")
     private String matchAuto;
+    @JsonAlias("dist_km")
     private Double distKm;
-    private String prioridade;
-    private String metodoCalculo;
-    private String observacao;
+    @JsonAlias({"idPaciente", "pacienteId", "fk_pac_id"})
+    private Long fkPacId;
+    @JsonAlias({"idDentista", "dentistaId", "fk_dent_id"})
+    private Long fkDentId;
+    @JsonAlias({"idUsuario", "usuarioId", "fk_user_id"})
+    private Long fkUserId;
 
     public Encaminhamento() {}
 
-    public Encaminhamento(long idEncaminhamento, long idPaciente, long idDentista, long idTriagem,
-                          LocalDateTime dtEncam, LocalDateTime prevFollow, String sttsEncam,
-                          String matchAuto, Double distKm, String prioridade,
-                          String metodoCalculo, String observacao) {
-        this.idEncaminhamento = idEncaminhamento;
-        this.idPaciente = idPaciente;
-        this.idDentista = idDentista;
-        this.idTriagem = idTriagem;
+    public Encaminhamento(Long idEncam, LocalDate dtEncam, String priorEncam, String obsEncam,
+                          LocalDate prevFollow, String sttsEncam, String matchAuto, Double distKm,
+                          Long fkPacId, Long fkDentId, Long fkUserId) {
+        this.idEncam = idEncam;
         this.dtEncam = dtEncam;
+        this.priorEncam = priorEncam;
+        this.obsEncam = obsEncam;
         this.prevFollow = prevFollow;
         this.sttsEncam = sttsEncam;
         this.matchAuto = matchAuto;
         this.distKm = distKm;
-        this.prioridade = prioridade;
-        this.metodoCalculo = metodoCalculo;
-        this.observacao = observacao;
+        this.fkPacId = fkPacId;
+        this.fkDentId = fkDentId;
+        this.fkUserId = fkUserId;
     }
 
-    public long getIdEncaminhamento() { return idEncaminhamento; }
-    public void setIdEncaminhamento(long idEncaminhamento) { this.idEncaminhamento = idEncaminhamento; }
+    public Long getIdEncam() { return idEncam; }
+    public void setIdEncam(Long idEncam) { this.idEncam = idEncam; }
 
-    public long getIdPaciente() { return idPaciente; }
-    public void setIdPaciente(long idPaciente) { this.idPaciente = idPaciente; }
+    public LocalDate getDtEncam() { return dtEncam; }
+    public void setDtEncam(LocalDate dtEncam) { this.dtEncam = dtEncam; }
 
-    public long getIdDentista() { return idDentista; }
-    public void setIdDentista(long idDentista) { this.idDentista = idDentista; }
+    public String getPriorEncam() { return priorEncam; }
+    public void setPriorEncam(String priorEncam) { this.priorEncam = priorEncam; }
 
-    public long getIdTriagem() { return idTriagem; }
-    public void setIdTriagem(long idTriagem) { this.idTriagem = idTriagem; }
+    public String getObsEncam() { return obsEncam; }
+    public void setObsEncam(String obsEncam) { this.obsEncam = obsEncam; }
 
-    public LocalDateTime getDtEncam() { return dtEncam; }
-    public void setDtEncam(LocalDateTime dtEncam) { this.dtEncam = dtEncam; }
-
-    public LocalDateTime getPrevFollow() { return prevFollow; }
-    public void setPrevFollow(LocalDateTime prevFollow) { this.prevFollow = prevFollow; }
+    public LocalDate getPrevFollow() { return prevFollow; }
+    public void setPrevFollow(LocalDate prevFollow) { this.prevFollow = prevFollow; }
 
     public String getSttsEncam() { return sttsEncam; }
     public void setSttsEncam(String sttsEncam) { this.sttsEncam = sttsEncam; }
@@ -64,24 +67,24 @@ public class Encaminhamento {
     public Double getDistKm() { return distKm; }
     public void setDistKm(Double distKm) { this.distKm = distKm; }
 
-    public String getPrioridade() { return prioridade; }
-    public void setPrioridade(String prioridade) { this.prioridade = prioridade; }
+    public Long getFkPacId() { return fkPacId; }
+    public void setFkPacId(Long fkPacId) { this.fkPacId = fkPacId; }
 
-    public String getMetodoCalculo() { return metodoCalculo; }
-    public void setMetodoCalculo(String metodoCalculo) { this.metodoCalculo = metodoCalculo; }
+    public Long getFkDentId() { return fkDentId; }
+    public void setFkDentId(Long fkDentId) { this.fkDentId = fkDentId; }
 
-    public String getObservacao() { return observacao; }
-    public void setObservacao(String observacao) { this.observacao = observacao; }
+    public Long getFkUserId() { return fkUserId; }
+    public void setFkUserId(Long fkUserId) { this.fkUserId = fkUserId; }
 
-    // Encerra o encaminhamento. Atualização de stts_trat do paciente fica a cargo do fluxo de acompanhamento.
+    // Encerra o encaminhamento. Atualizacao de stts_trat do paciente fica a cargo do fluxo de acompanhamento.
     public void encerrarEncaminhamento() {
         this.sttsEncam = "concluido";
     }
 
     @Override
     public String toString() {
-        return "Encaminhamento{idEncaminhamento=" + idEncaminhamento + "\nidPaciente=" + idPaciente
-                + "\nidDentista=" + idDentista + "\nsttsEncam=" + sttsEncam
-                + "\nprioridade=" + prioridade + "\nmatchAuto=" + matchAuto + "}";
+        return "Encaminhamento{idEncam=" + idEncam + "\nfkPacId=" + fkPacId
+                + "\nfkDentId=" + fkDentId + "\nsttsEncam=" + sttsEncam
+                + "\npriorEncam=" + priorEncam + "\nmatchAuto=" + matchAuto + "}";
     }
 }

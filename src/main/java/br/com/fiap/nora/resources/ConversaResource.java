@@ -3,8 +3,9 @@ package br.com.fiap.nora.resources;
 import br.com.fiap.nora.bo.ConversaBO;
 import br.com.fiap.nora.bo.MensagemBO;
 import br.com.fiap.nora.dto.ErroResponse;
+import br.com.fiap.nora.dto.response.ConversaResponseDTO;
+import br.com.fiap.nora.dto.response.MensagemDTO;
 import br.com.fiap.nora.entities.Conversa;
-import br.com.fiap.nora.entities.Mensagem;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -31,7 +32,7 @@ public class ConversaResource {
     @GET
     public Response listar(@QueryParam("contexto") String contexto, @QueryParam("stts") String stts) {
         try {
-            List<Conversa> lista = bo.listar(contexto, stts);
+            List<ConversaResponseDTO> lista = bo.listar(contexto, stts);
             return Response.ok(lista).build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -43,7 +44,8 @@ public class ConversaResource {
     @Path("/{id}")
     public Response buscarPorId(@PathParam("id") long id) {
         try {
-            return Response.ok(bo.buscarPorId(id)).build();
+            ConversaResponseDTO dto = bo.buscarPorId(id);
+            return Response.ok(dto).build();
         } catch (RegraNegocioException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.startsWith(ConversaBO.PREFIXO_NAO_ENCONTRADA)) {
@@ -59,15 +61,14 @@ public class ConversaResource {
     @POST
     public Response criar(Conversa conversa, @Context UriInfo uriInfo) {
         try {
-            Conversa resultado = bo.criar(conversa);
-            if (resultado == conversa) {
-                // Nova conversa criada
+            ConversaResponseDTO dto = bo.criar(conversa);
+            // Se o id ja existia (upsert), retorna 200; se e nova, retorna 201 com Location.
+            if (conversa.getIdConv() != null && conversa.getIdConv().equals(dto.getId())) {
                 return Response.created(
-                        uriInfo.getAbsolutePathBuilder().path(String.valueOf(resultado.getIdConversa())).build()
-                ).entity(resultado).build();
+                        uriInfo.getAbsolutePathBuilder().path(String.valueOf(dto.getId())).build()
+                ).entity(dto).build();
             }
-            // Upsert: conversa ativa ja existia para a mesma FK — retorna 200 com a existente
-            return Response.ok(resultado).build();
+            return Response.ok(dto).build();
         } catch (RegraNegocioException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.startsWith(ConversaBO.PREFIXO_NAO_ENCONTRADA)) {
@@ -82,13 +83,18 @@ public class ConversaResource {
         }
     }
 
-    // Endpoint separado para mensagens: mais simples que DTO composto e segue padrão REST acadêmico
     @GET
     @Path("/{id}/mensagens")
     public Response listarMensagens(@PathParam("id") long id) {
         try {
-            List<Mensagem> mensagens = mensagemBO.listarPorConversa(id);
+            List<MensagemDTO> mensagens = mensagemBO.listarPorConversa(id);
             return Response.ok(mensagens).build();
+        } catch (RegraNegocioException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            if (msg.startsWith(MensagemBO.PREFIXO_NAO_ENCONTRADA)) {
+                return Response.status(404).entity(new ErroResponse(msg)).build();
+            }
+            return Response.status(400).entity(new ErroResponse(msg)).build();
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(500).entity(new ErroResponse("Erro ao listar mensagens da conversa.")).build();

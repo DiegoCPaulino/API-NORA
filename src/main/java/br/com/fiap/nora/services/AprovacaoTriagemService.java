@@ -1,12 +1,14 @@
 package br.com.fiap.nora.services;
 
 import br.com.fiap.nora.conexoes.ConexaoFactory;
+import br.com.fiap.nora.dao.AcompEventoDao;
 import br.com.fiap.nora.dao.ConversaDao;
 import br.com.fiap.nora.dao.EncaminhamentoDao;
 import br.com.fiap.nora.dao.PacienteDao;
 import br.com.fiap.nora.dao.PessoaDao;
 import br.com.fiap.nora.dao.TriagemDao;
 import br.com.fiap.nora.dto.MatchResponse;
+import br.com.fiap.nora.entities.AcompEvento;
 import br.com.fiap.nora.entities.Conversa;
 import br.com.fiap.nora.entities.Encaminhamento;
 import br.com.fiap.nora.entities.Paciente;
@@ -16,7 +18,7 @@ import br.com.fiap.nora.exceptions.RegraNegocioException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public class AprovacaoTriagemService {
 
@@ -43,13 +45,22 @@ public class AprovacaoTriagemService {
             }
 
             // 3. Validar se ainda pode ser aprovada (409)
-            if ("aprovada".equals(triagem.getSttsTriag()) || "reprovada".equals(triagem.getSttsTriag())) {
-                throw new RegraNegocioException(PREFIXO_JA_PROCESSADA + " Triagem ja foi aprovada ou reprovada.");
+            // DDL stts_triag: 'em_analise','aprovada','encerrada','inativa'
+            if ("aprovada".equals(triagem.getSttsTriag()) || "encerrada".equals(triagem.getSttsTriag())) {
+                throw new RegraNegocioException(PREFIXO_JA_PROCESSADA + " Triagem ja foi aprovada ou encerrada.");
+            }
+
+            // 3b. Validar duplicidade de paciente (evita ORA-00001 PAC_PESS_UK)
+            PacienteDao pacienteDao = new PacienteDao(conn);
+            if (pacienteDao.existePorPessoa(triagem.getFkPessId())) {
+                throw new RegraNegocioException(PREFIXO_JA_PROCESSADA + " Pessoa ja possui paciente cadastrado.");
+            }
+            if (pacienteDao.existePorTriagem(triagemId)) {
+                throw new RegraNegocioException(PREFIXO_JA_PROCESSADA + " Triagem ja vinculada a paciente.");
             }
 
             // 4. Chamar MatchService usando ID_TRIAGEM — ANTES de qualquer escrita no banco
             // Motivo: paciente criado durante aprovacao ainda nao recebeu commit; Python nao o enxergaria
-            // A triagem ja existe no Oracle antes desta chamada — sem problema de visibilidade
             System.out.println("[AprovacaoTriagemService] Buscando sugestao de dentista para triagem " + triagemId);
             MatchResponse matchResp = new MatchService().sugerirDentistaPorTriagem(triagemId);
 
@@ -66,47 +77,52 @@ public class AprovacaoTriagemService {
 
             // 7. Atualizar pessoa: stts_pess = aprovada
             PessoaDao pessoaDao = new PessoaDao(conn);
-            pessoaDao.atualizarStatus(triagem.getIdPessoa(), "aprovada");
+            pessoaDao.atualizarStatus(triagem.getFkPessId(), "aprovada");
 
             // 8. Inserir paciente e capturar ID gerado
             Paciente paciente = new Paciente();
-            paciente.setIdPessoa(triagem.getIdPessoa());
-            paciente.setIdTriagem(triagemId);
-            paciente.setIdade(triagem.getIdade());
+            paciente.setFkPessId(triagem.getFkPessId());
+            paciente.setIdTriagRef(triagemId);
             paciente.setSttsTrat("aguardando");
-            PacienteDao pacienteDao = new PacienteDao(conn);
             long idPaciente = pacienteDao.inserirRetornandoId(paciente);
-            paciente.setIdPaciente(idPaciente);
+            paciente.setIdPac(idPaciente);
 
             // 9. Atualizar conversa: contexto = acomp_paciente, limpar fk_pess_id, preencher fk_pac_id
             ConversaDao conversaDao = new ConversaDao(conn);
-            Conversa conversa = conversaDao.buscarPorPessoa(triagem.getIdPessoa());
+            Conversa conversa = conversaDao.buscarPorPessoa(triagem.getFkPessId());
             if (conversa != null) {
-                conversaDao.atualizarParaPaciente(conversa.getIdConversa(), idPaciente);
+                conversaDao.atualizarParaPaciente(conversa.getIdConv(), idPaciente);
             } else {
-                System.err.println("[AprovacaoTriagemService] Aviso: nenhuma conversa encontrada para idPessoa=" + triagem.getIdPessoa());
+                System.err.println("[AprovacaoTriagemService] Aviso: nenhuma conversa encontrada para idPessoa=" + triagem.getFkPessId());
             }
 
             // 10. Inserir encaminhamento com dados retornados pelo match
             Encaminhamento encam = new Encaminhamento();
-            encam.setIdPaciente(idPaciente);
-            encam.setIdDentista(matchResp.getDentista_sugerido().getId_dentista());
-            encam.setIdTriagem(triagemId);
+            encam.setFkPacId(idPaciente);
+            encam.setFkDentId(Long.valueOf(matchResp.getDentista_sugerido().getId_dentista()));
             encam.setMatchAuto("S");
-            // cep_fallback: distancia_km = null; nominatim_haversine: valor real — coluna DIST_KM aceita null
+            // cep_fallback: distancia_km = null; nominatim_haversine: valor real — coluna dist_km aceita null
             encam.setDistKm(matchResp.getDistancia_km());
-            encam.setPrioridade(triagem.getPriorTriag());
-            encam.setMetodoCalculo(matchResp.getMetodo_calculo());
+            encam.setPriorEncam(triagem.getPriorTriag());
             encam.setSttsEncam("ativo");
-            // prev_follow = 15 dias a partir de hoje.
-            encam.setPrevFollow(LocalDateTime.now().plusDays(15));
-            encam.setObservacao(matchResp.getCriterio_fallback() != null ? matchResp.getCriterio_fallback() : matchResp.getObservacao());
+            // prev_follow = 15 dias a partir de hoje
+            encam.setPrevFollow(LocalDate.now().plusDays(15));
+            encam.setObsEncam(matchResp.getCriterio_fallback() != null ? matchResp.getCriterio_fallback() : matchResp.getObservacao());
 
             EncaminhamentoDao encamDao = new EncaminhamentoDao(conn);
             long idEncam = encamDao.inserirRetornandoId(encam);
-            encam.setIdEncaminhamento(idEncam);
+            encam.setIdEncam(idEncam);
 
-            // 11. Confirmar transacao
+            // 11. Criar evento inicial de acompanhamento
+            AcompEvento evento = new AcompEvento();
+            evento.setFkEncamId(idEncam);
+            evento.setTpEvento("primeira_consulta");
+            evento.setDsEvento("Encaminhamento criado automaticamente via match geografico");
+            evento.setOrigem("sistema");
+            evento.setTpMensagem("texto");
+            new AcompEventoDao(conn).inserirRetornandoId(evento);
+
+            // 12. Confirmar transacao
             conn.commit();
 
             // 12. Retornar encaminhamento criado

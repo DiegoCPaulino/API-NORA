@@ -9,16 +9,18 @@ import java.util.List;
 
 public class EnderecoDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_end),0)+1 FROM endereco";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_ENDERECO (CEP, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, LATITUDE, LONGITUDE) VALUES (?,?,?,?,?,?,?,?,?)";
+            "INSERT INTO endereco (id_end, cep, logradouro, numero, complemento, bairro, cidade, uf) VALUES (?,?,?,?,?,?,?,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_ENDERECO SET CEP=?, LOGRADOURO=?, NUMERO=?, COMPLEMENTO=?, BAIRRO=?, CIDADE=?, UF=?, LATITUDE=?, LONGITUDE=? WHERE ID_ENDERECO=?";
+            "UPDATE endereco SET cep=?, logradouro=?, numero=?, complemento=?, bairro=?, cidade=?, uf=? WHERE id_end=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_ENDERECO WHERE ID_ENDERECO=?";
+            "DELETE FROM endereco WHERE id_end=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_ENDERECO ORDER BY ID_ENDERECO";
+            "SELECT * FROM endereco ORDER BY id_end";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_ENDERECO WHERE ID_ENDERECO=?";
+            "SELECT * FROM endereco WHERE id_end=?";
 
     public Connection minhaConexao;
 
@@ -26,18 +28,34 @@ public class EnderecoDao {
         this.minhaConexao = new ConexaoFactory().conexao();
     }
 
-    public String inserir(Endereco e) {
+    public EnderecoDao(Connection conn) {
+        this.minhaConexao = conn;
+    }
+
+    public long inserirRetornandoId(Endereco e) throws SQLException {
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_end.");
+            novoId = rs.getLong(1);
+        }
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setString(1, e.getCep());
-            stmt.setString(2, e.getLogradouro());
-            stmt.setString(3, e.getNumero());
-            stmt.setString(4, e.getComplemento());
-            stmt.setString(5, e.getBairro());
-            stmt.setString(6, e.getCidade());
-            stmt.setString(7, e.getUf());
-            if (e.getLatitude() != null) stmt.setDouble(8, e.getLatitude()); else stmt.setNull(8, Types.NUMERIC);
-            if (e.getLongitude() != null) stmt.setDouble(9, e.getLongitude()); else stmt.setNull(9, Types.NUMERIC);
+            stmt.setLong(1, novoId);
+            stmt.setString(2, e.getCep());
+            stmt.setString(3, e.getLogradouro());
+            stmt.setString(4, e.getNumero());
+            stmt.setString(5, e.getComplemento());
+            stmt.setString(6, e.getBairro());
+            stmt.setString(7, e.getCidade());
+            stmt.setString(8, e.getUf());
             stmt.executeUpdate();
+        }
+        return novoId;
+    }
+
+    public String inserir(Endereco e) {
+        try {
+            inserirRetornandoId(e);
             return "Endereco inserido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -54,9 +72,7 @@ public class EnderecoDao {
             stmt.setString(5, e.getBairro());
             stmt.setString(6, e.getCidade());
             stmt.setString(7, e.getUf());
-            if (e.getLatitude() != null) stmt.setDouble(8, e.getLatitude()); else stmt.setNull(8, Types.NUMERIC);
-            if (e.getLongitude() != null) stmt.setDouble(9, e.getLongitude()); else stmt.setNull(9, Types.NUMERIC);
-            stmt.setLong(10, e.getIdEndereco());
+            stmt.setLong(8, e.getIdEnd());
             stmt.executeUpdate();
             return "Endereco atualizado com sucesso.";
         } catch (SQLException ex) {
@@ -101,17 +117,14 @@ public class EnderecoDao {
 
     private Endereco mapear(ResultSet rs) throws SQLException {
         Endereco e = new Endereco();
-        e.setIdEndereco(rs.getLong("ID_ENDERECO"));
-        e.setCep(rs.getString("CEP"));
-        e.setLogradouro(rs.getString("LOGRADOURO"));
-        e.setNumero(rs.getString("NUMERO"));
-        e.setComplemento(rs.getString("COMPLEMENTO"));
-        e.setBairro(rs.getString("BAIRRO"));
-        e.setCidade(rs.getString("CIDADE"));
-        e.setUf(rs.getString("UF"));
-        double lat = rs.getDouble("LATITUDE"); e.setLatitude(rs.wasNull() ? null : lat);
-        double lon = rs.getDouble("LONGITUDE"); e.setLongitude(rs.wasNull() ? null : lon);
-        Timestamp ts = rs.getTimestamp("DATA_CRIACAO"); if (ts != null) e.setDataCriacao(ts.toLocalDateTime());
+        e.setIdEnd(rs.getLong("id_end"));
+        e.setCep(rs.getString("cep"));
+        e.setLogradouro(rs.getString("logradouro"));
+        e.setNumero(rs.getString("numero"));
+        e.setComplemento(rs.getString("complemento"));
+        e.setBairro(rs.getString("bairro"));
+        e.setCidade(rs.getString("cidade"));
+        e.setUf(rs.getString("uf"));
         return e;
     }
 }

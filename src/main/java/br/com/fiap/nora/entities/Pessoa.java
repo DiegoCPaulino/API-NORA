@@ -1,73 +1,61 @@
 package br.com.fiap.nora.entities;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public class Pessoa {
 
-    private long idPessoa;
-    private long idEndereco;
-    private String nomeCompleto;
-    private String cpf;
-    private LocalDate dataNascimento;
-    private int idade;
-    private String sexo;
-    private String email;
-    private String telefone;
+    private Long idPess;
+    private String nmPess;
+    private String cpfPess;
+    private String rgPess;
+    private String telPess;
+    private String emailPess;
+    private LocalDate dtNasc;
     private String tgChatId;
     private String canalOrig;
+    private LocalDate dtCad;
     private String sttsPess;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    private Long fkEndId;
 
     public Pessoa() {}
 
-    public Pessoa(long idPessoa, long idEndereco, String nomeCompleto, String cpf,
-                  LocalDate dataNascimento, int idade, String sexo, String email, String telefone,
-                  String tgChatId, String canalOrig, String sttsPess,
-                  LocalDateTime dataCriacao, LocalDateTime dataAtualizacao) {
-        this.idPessoa = idPessoa;
-        this.idEndereco = idEndereco;
-        this.nomeCompleto = nomeCompleto;
-        this.cpf = cpf;
-        this.dataNascimento = dataNascimento;
-        this.idade = idade;
-        this.sexo = sexo;
-        this.email = email;
-        this.telefone = telefone;
+    public Pessoa(Long idPess, String nmPess, String cpfPess, String rgPess, String telPess,
+                  String emailPess, LocalDate dtNasc, String tgChatId, String canalOrig,
+                  LocalDate dtCad, String sttsPess, Long fkEndId) {
+        this.idPess = idPess;
+        this.nmPess = nmPess;
+        this.cpfPess = cpfPess;
+        this.rgPess = rgPess;
+        this.telPess = telPess;
+        this.emailPess = emailPess;
+        this.dtNasc = dtNasc;
         this.tgChatId = tgChatId;
         this.canalOrig = canalOrig;
+        this.dtCad = dtCad;
         this.sttsPess = sttsPess;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.fkEndId = fkEndId;
     }
 
-    public long getIdPessoa() { return idPessoa; }
-    public void setIdPessoa(long idPessoa) { this.idPessoa = idPessoa; }
+    public Long getIdPess() { return idPess; }
+    public void setIdPess(Long idPess) { this.idPess = idPess; }
 
-    public long getIdEndereco() { return idEndereco; }
-    public void setIdEndereco(long idEndereco) { this.idEndereco = idEndereco; }
+    public String getNmPess() { return nmPess; }
+    public void setNmPess(String nmPess) { this.nmPess = nmPess; }
 
-    public String getNomeCompleto() { return nomeCompleto; }
-    public void setNomeCompleto(String nomeCompleto) { this.nomeCompleto = nomeCompleto; }
+    public String getCpfPess() { return cpfPess; }
+    public void setCpfPess(String cpfPess) { this.cpfPess = cpfPess; }
 
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
+    public String getRgPess() { return rgPess; }
+    public void setRgPess(String rgPess) { this.rgPess = rgPess; }
 
-    public LocalDate getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+    public String getTelPess() { return telPess; }
+    public void setTelPess(String telPess) { this.telPess = telPess; }
 
-    public int getIdade() { return idade; }
-    public void setIdade(int idade) { this.idade = idade; }
+    public String getEmailPess() { return emailPess; }
+    public void setEmailPess(String emailPess) { this.emailPess = emailPess; }
 
-    public String getSexo() { return sexo; }
-    public void setSexo(String sexo) { this.sexo = sexo; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
+    public LocalDate getDtNasc() { return dtNasc; }
+    public void setDtNasc(LocalDate dtNasc) { this.dtNasc = dtNasc; }
 
     public String getTgChatId() { return tgChatId; }
     public void setTgChatId(String tgChatId) { this.tgChatId = tgChatId; }
@@ -75,18 +63,17 @@ public class Pessoa {
     public String getCanalOrig() { return canalOrig; }
     public void setCanalOrig(String canalOrig) { this.canalOrig = canalOrig; }
 
+    public LocalDate getDtCad() { return dtCad; }
+    public void setDtCad(LocalDate dtCad) { this.dtCad = dtCad; }
+
     public String getSttsPess() { return sttsPess; }
     public void setSttsPess(String sttsPess) { this.sttsPess = sttsPess; }
 
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
-
-    public LocalDateTime getDataAtualizacao() { return dataAtualizacao; }
-    public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
+    public Long getFkEndId() { return fkEndId; }
+    public void setFkEndId(Long fkEndId) { this.fkEndId = fkEndId; }
 
     @Override
     public String toString() {
-        return "Pessoa{idPessoa=" + idPessoa + "\nnomeCompleto=" + nomeCompleto
-                + "\nidade=" + idade + "\nsttsPess=" + sttsPess + "}";
+        return "Pessoa{idPess=" + idPess + "\nnmPess=" + nmPess + "\nsttsPess=" + sttsPess + "}";
     }
 }

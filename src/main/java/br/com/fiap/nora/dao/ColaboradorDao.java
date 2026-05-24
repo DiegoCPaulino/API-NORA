@@ -9,18 +9,20 @@ import java.util.List;
 
 public class ColaboradorDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_colab),0)+1 FROM colaborador";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_COLABORADOR (NOME, EMAIL, SENHA_HASH, PERFIL, STATUS_COLAB) VALUES (?,?,?,?,?)";
+            "INSERT INTO colaborador (id_colab, nm_colab, cpf_colab, email_colab, cargo_colab, dt_entrada, stts_colab, fk_end_id) VALUES (?,?,?,?,?,SYSDATE,?,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_COLABORADOR SET NOME=?, EMAIL=?, SENHA_HASH=?, PERFIL=?, STATUS_COLAB=? WHERE ID_COLABORADOR=?";
+            "UPDATE colaborador SET nm_colab=?, email_colab=?, cargo_colab=?, stts_colab=? WHERE id_colab=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_COLABORADOR WHERE ID_COLABORADOR=?";
+            "DELETE FROM colaborador WHERE id_colab=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_COLABORADOR ORDER BY ID_COLABORADOR";
+            "SELECT * FROM colaborador ORDER BY id_colab";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_COLABORADOR WHERE ID_COLABORADOR=?";
+            "SELECT * FROM colaborador WHERE id_colab=?";
     private static final String SQL_SELECT_BY_EMAIL =
-            "SELECT * FROM TB_COLABORADOR WHERE EMAIL=?";
+            "SELECT * FROM colaborador WHERE email_colab=?";
 
     public Connection minhaConexao;
 
@@ -28,14 +30,34 @@ public class ColaboradorDao {
         this.minhaConexao = new ConexaoFactory().conexao();
     }
 
-    public String inserir(Colaborador c) {
+    public ColaboradorDao(Connection conn) {
+        this.minhaConexao = conn;
+    }
+
+    public long inserirRetornandoId(Colaborador c) throws SQLException {
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_colab.");
+            novoId = rs.getLong(1);
+        }
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setString(1, c.getNome());
-            stmt.setString(2, c.getEmail());
-            stmt.setString(3, c.getSenhaHash());
-            stmt.setString(4, c.getPerfil());
-            stmt.setString(5, c.getStatusColab());
+            stmt.setLong(1, novoId);
+            stmt.setString(2, c.getNmColab());
+            stmt.setString(3, c.getCpfColab());
+            stmt.setString(4, c.getEmailColab());
+            stmt.setString(5, c.getCargoColab());
+            // dt_entrada = SYSDATE no SQL
+            stmt.setString(6, c.getSttsColab());
+            if (c.getFkEndId() != null) stmt.setLong(7, c.getFkEndId()); else stmt.setNull(7, Types.NUMERIC);
             stmt.executeUpdate();
+        }
+        return novoId;
+    }
+
+    public String inserir(Colaborador c) {
+        try {
+            inserirRetornandoId(c);
             return "Colaborador inserido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -45,12 +67,11 @@ public class ColaboradorDao {
 
     public String atualizar(Colaborador c) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
-            stmt.setString(1, c.getNome());
-            stmt.setString(2, c.getEmail());
-            stmt.setString(3, c.getSenhaHash());
-            stmt.setString(4, c.getPerfil());
-            stmt.setString(5, c.getStatusColab());
-            stmt.setLong(6, c.getIdColaborador());
+            stmt.setString(1, c.getNmColab());
+            stmt.setString(2, c.getEmailColab());
+            stmt.setString(3, c.getCargoColab());
+            stmt.setString(4, c.getSttsColab());
+            stmt.setLong(5, c.getIdColab());
             stmt.executeUpdate();
             return "Colaborador atualizado com sucesso.";
         } catch (SQLException ex) {
@@ -107,13 +128,14 @@ public class ColaboradorDao {
 
     private Colaborador mapear(ResultSet rs) throws SQLException {
         Colaborador c = new Colaborador();
-        c.setIdColaborador(rs.getLong("ID_COLABORADOR"));
-        c.setNome(rs.getString("NOME"));
-        c.setEmail(rs.getString("EMAIL"));
-        c.setSenhaHash(rs.getString("SENHA_HASH"));
-        c.setPerfil(rs.getString("PERFIL"));
-        c.setStatusColab(rs.getString("STATUS_COLAB"));
-        Timestamp ts = rs.getTimestamp("DATA_CRIACAO"); if (ts != null) c.setDataCriacao(ts.toLocalDateTime());
+        c.setIdColab(rs.getLong("id_colab"));
+        c.setNmColab(rs.getString("nm_colab"));
+        c.setCpfColab(rs.getString("cpf_colab"));
+        c.setEmailColab(rs.getString("email_colab"));
+        c.setCargoColab(rs.getString("cargo_colab"));
+        Date de = rs.getDate("dt_entrada"); if (de != null) c.setDtEntrada(de.toLocalDate());
+        c.setSttsColab(rs.getString("stts_colab"));
+        long fe = rs.getLong("fk_end_id"); c.setFkEndId(rs.wasNull() ? null : fe);
         return c;
     }
 }

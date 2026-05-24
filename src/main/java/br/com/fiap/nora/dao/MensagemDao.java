@@ -9,18 +9,22 @@ import java.util.List;
 
 public class MensagemDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_mens),0)+1 FROM mensagem";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_MENSAGEM (ID_CONVERSA, ENVIADO_POR, DIRECAO, CONTEUDO, TIPO_MENSAGEM, LIDA) VALUES (?,?,?,?,?,?)";
+            "INSERT INTO mensagem (id_mens, fk_conv_id, enviado_por, direcao, conteudo, tp_mens, dt_envio) VALUES (?,?,?,?,?,?,SYSDATE)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_MENSAGEM SET LIDA=? WHERE ID_MENSAGEM=?";
+            "UPDATE mensagem SET conteudo=? WHERE id_mens=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_MENSAGEM WHERE ID_MENSAGEM=?";
+            "DELETE FROM mensagem WHERE id_mens=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_MENSAGEM ORDER BY ID_MENSAGEM";
+            "SELECT * FROM mensagem ORDER BY id_mens";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_MENSAGEM WHERE ID_MENSAGEM=?";
+            "SELECT * FROM mensagem WHERE id_mens=?";
     private static final String SQL_SELECT_BY_CONVERSA =
-            "SELECT * FROM TB_MENSAGEM WHERE ID_CONVERSA=? ORDER BY DATA_ENVIO";
+            "SELECT * FROM mensagem WHERE fk_conv_id=? ORDER BY dt_envio ASC, id_mens ASC";
+    private static final String SQL_ULTIMA_POR_CONVERSA =
+            "SELECT * FROM mensagem WHERE fk_conv_id=? ORDER BY dt_envio DESC, id_mens DESC";
 
     public Connection minhaConexao;
 
@@ -28,20 +32,39 @@ public class MensagemDao {
         this.minhaConexao = new ConexaoFactory().conexao();
     }
 
+    public MensagemDao(Connection conn) {
+        this.minhaConexao = conn;
+    }
+
     public long inserirRetornandoId(Mensagem m) throws SQLException {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT, new String[]{"ID_MENSAGEM"})) {
-            stmt.setLong(1, m.getIdConversa());
-            stmt.setString(2, m.getEnviadoPor());
-            stmt.setString(3, m.getDirecao());
-            stmt.setString(4, m.getConteudo());
-            stmt.setString(5, m.getTipoMensagem());
-            stmt.setString(6, m.getLida());
-            stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getLong(1);
-            }
-            throw new SQLException("Falha ao obter ID gerado para Mensagem.");
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_mens.");
+            novoId = rs.getLong(1);
         }
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            if (m.getFkConvId() != null) stmt.setLong(2, m.getFkConvId()); else stmt.setNull(2, Types.NUMERIC);
+            stmt.setString(3, m.getEnviadoPor());
+            stmt.setString(4, m.getDirecao());
+            stmt.setString(5, m.getConteudo());
+            stmt.setString(6, m.getTpMens());
+            stmt.executeUpdate();
+        }
+        return novoId;
+    }
+
+    public Mensagem buscarUltimaPorConversa(long idConversa) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_ULTIMA_POR_CONVERSA)) {
+            stmt.setLong(1, idConversa);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 
     public List<Mensagem> listarPorConversa(long idConversa) {
@@ -58,14 +81,8 @@ public class MensagemDao {
     }
 
     public String inserir(Mensagem m) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setLong(1, m.getIdConversa());
-            stmt.setString(2, m.getEnviadoPor());
-            stmt.setString(3, m.getDirecao());
-            stmt.setString(4, m.getConteudo());
-            stmt.setString(5, m.getTipoMensagem());
-            stmt.setString(6, m.getLida());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(m);
             return "Mensagem inserida com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -75,8 +92,8 @@ public class MensagemDao {
 
     public String atualizar(Mensagem m) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
-            stmt.setString(1, m.getLida());
-            stmt.setLong(2, m.getIdMensagem());
+            stmt.setString(1, m.getConteudo());
+            stmt.setLong(2, m.getIdMens());
             stmt.executeUpdate();
             return "Mensagem atualizada com sucesso.";
         } catch (SQLException ex) {
@@ -121,14 +138,13 @@ public class MensagemDao {
 
     private Mensagem mapear(ResultSet rs) throws SQLException {
         Mensagem m = new Mensagem();
-        m.setIdMensagem(rs.getLong("ID_MENSAGEM"));
-        m.setIdConversa(rs.getLong("ID_CONVERSA"));
-        m.setEnviadoPor(rs.getString("ENVIADO_POR"));
-        m.setDirecao(rs.getString("DIRECAO"));
-        m.setConteudo(rs.getString("CONTEUDO"));
-        m.setTipoMensagem(rs.getString("TIPO_MENSAGEM"));
-        Timestamp te = rs.getTimestamp("DATA_ENVIO"); if (te != null) m.setDataEnvio(te.toLocalDateTime());
-        m.setLida(rs.getString("LIDA"));
+        m.setIdMens(rs.getLong("id_mens"));
+        m.setEnviadoPor(rs.getString("enviado_por"));
+        m.setDirecao(rs.getString("direcao"));
+        m.setConteudo(rs.getString("conteudo"));
+        m.setTpMens(rs.getString("tp_mens"));
+        Date de = rs.getDate("dt_envio"); if (de != null) m.setDtEnvio(de.toLocalDate());
+        long fc = rs.getLong("fk_conv_id"); m.setFkConvId(rs.wasNull() ? null : fc);
         return m;
     }
 }

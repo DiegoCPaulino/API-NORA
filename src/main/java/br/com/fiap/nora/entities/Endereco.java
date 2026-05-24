@@ -1,44 +1,32 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
-
 public class Endereco {
 
-    private long idEndereco;
-    private String cep;
+    private Long idEnd;
     private String logradouro;
     private String numero;
     private String complemento;
     private String bairro;
     private String cidade;
     private String uf;
-    private Double latitude;
-    private Double longitude;
-    private LocalDateTime dataCriacao;
+    private String cep;
 
     public Endereco() {}
 
-    public Endereco(long idEndereco, String cep, String logradouro, String numero, String complemento,
-                    String bairro, String cidade, String uf, Double latitude, Double longitude,
-                    LocalDateTime dataCriacao) {
-        this.idEndereco = idEndereco;
-        this.cep = cep;
+    public Endereco(Long idEnd, String logradouro, String numero, String complemento,
+                    String bairro, String cidade, String uf, String cep) {
+        this.idEnd = idEnd;
         this.logradouro = logradouro;
         this.numero = numero;
         this.complemento = complemento;
         this.bairro = bairro;
         this.cidade = cidade;
         this.uf = uf;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.dataCriacao = dataCriacao;
+        this.cep = cep;
     }
 
-    public long getIdEndereco() { return idEndereco; }
-    public void setIdEndereco(long idEndereco) { this.idEndereco = idEndereco; }
-
-    public String getCep() { return cep; }
-    public void setCep(String cep) { this.cep = cep; }
+    public Long getIdEnd() { return idEnd; }
+    public void setIdEnd(Long idEnd) { this.idEnd = idEnd; }
 
     public String getLogradouro() { return logradouro; }
     public void setLogradouro(String logradouro) { this.logradouro = logradouro; }
@@ -58,18 +46,12 @@ public class Endereco {
     public String getUf() { return uf; }
     public void setUf(String uf) { this.uf = uf; }
 
-    public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
-
-    public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
-
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
+    public String getCep() { return cep; }
+    public void setCep(String cep) { this.cep = cep; }
 
     @Override
     public String toString() {
-        return "Endereco{idEndereco=" + idEndereco + "\ncep=" + cep + "\nlogradouro=" + logradouro
+        return "Endereco{idEnd=" + idEnd + "\ncep=" + cep + "\nlogradouro=" + logradouro
                 + "\nbairro=" + bairro + "\ncidade=" + cidade + "\nuf=" + uf + "}";
     }
 }

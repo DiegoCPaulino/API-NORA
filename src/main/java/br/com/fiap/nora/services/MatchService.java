@@ -1,50 +1,44 @@
 package br.com.fiap.nora.services;
 
+import br.com.fiap.nora.conexoes.ConexaoFactory;
+import br.com.fiap.nora.dao.DentistaDao;
 import br.com.fiap.nora.dto.MatchResponse;
-import br.com.fiap.nora.dto.PythonEnvelope;
+import br.com.fiap.nora.entities.Dentista;
 import br.com.fiap.nora.exceptions.PythonApiException;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
+import java.sql.Connection;
+import java.util.List;
 
 public class MatchService {
 
-    // Endpoint correto para o fluxo de aprovacao: usa ID_TRIAGEM (ja persistida)
-    // Motivo: paciente criado durante aprovacao ainda nao recebeu commit e nao e visivel para o Python
+    // Match interno: seleciona dentista disponivel do banco Oracle.
+    // Parametro idTriagem mantido para nao quebrar assinatura usada em AprovacaoTriagemService.
     public MatchResponse sugerirDentistaPorTriagem(long idTriagem) throws PythonApiException {
-        PythonApiClient client = new PythonApiClient();
-
-        System.out.println("[MatchService] Chamando /api/triagens/" + idTriagem + "/sugestao-dentista");
-
-        String json = client.get("/api/triagens/" + idTriagem + "/sugestao-dentista");
-
-        Type tipo = new TypeToken<PythonEnvelope<MatchResponse>>() {}.getType();
-        PythonEnvelope<MatchResponse> envelope = client.getGson().fromJson(json, tipo);
-
-        if (envelope == null) {
-            throw new PythonApiException("Resposta vazia do servico de match geografico.");
+        System.out.println("[MatchService] Buscando dentista disponivel no banco (match interno) para triagem " + idTriagem);
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            List<Dentista> disponiveis = new DentistaDao(conn).selecionarDisponiveis();
+            if (disponiveis.isEmpty()) {
+                MatchResponse sem = new MatchResponse();
+                sem.setMetodo_calculo("sem_dentista_disponivel");
+                return sem;
+            }
+            Dentista dentista = disponiveis.get(0);
+            MatchResponse.DentistaSugerido sugerido = new MatchResponse.DentistaSugerido();
+            sugerido.setId_dentista(Long.valueOf(dentista.getIdDent()).intValue());
+            sugerido.setNome(dentista.getNmDent());
+            MatchResponse resp = new MatchResponse();
+            resp.setDentista_sugerido(sugerido);
+            resp.setMetodo_calculo("match_interno");
+            resp.setDistancia_km(null);
+            resp.setObservacao("Match interno — dentista selecionado do banco Oracle");
+            return resp;
+        } catch (Exception e) {
+            throw new PythonApiException("Falha ao buscar dentista disponivel no banco: " + e.getMessage());
         }
-        if (!envelope.isStatus() || envelope.getData() == null) {
-            String msg = envelope.getMessage() != null ? envelope.getMessage() : "Resposta invalida do match geografico.";
-            throw new PythonApiException(msg);
-        }
-
-        return envelope.getData();
     }
 
-    // Mantido para uso com pacientes ja persistidos (fora do fluxo de aprovacao)
+    // Nao usado no fluxo principal — mantido por compatibilidade de assinatura
     public MatchResponse sugerirDentista(long idPaciente) throws PythonApiException {
-        PythonApiClient client = new PythonApiClient();
-
-        String json = client.get("/api/pacientes/" + idPaciente + "/sugestao-dentista");
-
-        Type tipo = new TypeToken<PythonEnvelope<MatchResponse>>() {}.getType();
-        PythonEnvelope<MatchResponse> envelope = client.getGson().fromJson(json, tipo);
-
-        if (envelope == null || envelope.getData() == null) {
-            throw new PythonApiException("Resposta invalida do servico de match geografico.");
-        }
-
-        return envelope.getData();
+        throw new PythonApiException("Match por paciente nao disponivel — usar sugerirDentistaPorTriagem.");
     }
 }

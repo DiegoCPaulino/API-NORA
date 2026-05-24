@@ -1,7 +1,10 @@
 package br.com.fiap.nora.resources;
 
+import br.com.fiap.nora.bo.EncaminhamentoBO;
 import br.com.fiap.nora.bo.TriagemBO;
 import br.com.fiap.nora.dto.ErroResponse;
+import br.com.fiap.nora.dto.response.EncaminhamentoResponseDTO;
+import br.com.fiap.nora.dto.response.TriagemResponseDTO;
 import br.com.fiap.nora.entities.Encaminhamento;
 import br.com.fiap.nora.entities.Triagem;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
@@ -27,11 +30,12 @@ public class TriagemResource {
 
     private TriagemBO triagemBO = new TriagemBO();
     private AprovacaoTriagemService aprovacaoService = new AprovacaoTriagemService();
+    private EncaminhamentoBO encaminhamentoBO = new EncaminhamentoBO();
 
     @GET
     public Response listar() {
         try {
-            List<Triagem> lista = triagemBO.listar();
+            List<TriagemResponseDTO> lista = triagemBO.listar();
             return Response.ok(lista).build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -39,13 +43,32 @@ public class TriagemResource {
         }
     }
 
+    @GET
+    @Path("/{id}")
+    public Response buscarPorId(@PathParam("id") long id) {
+        try {
+            TriagemResponseDTO dto = triagemBO.buscarPorId(id);
+            if (dto == null) {
+                return Response.status(404).entity(new ErroResponse("Triagem nao encontrada.")).build();
+            }
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(500).entity(new ErroResponse("Erro ao buscar triagem.")).build();
+        }
+    }
+
     @POST
     public Response criar(Triagem triagem, @Context UriInfo uriInfo) {
         try {
-            triagemBO.criar(triagem);
-            return Response.created(uriInfo.getAbsolutePathBuilder().build()).entity(triagem).build();
+            TriagemResponseDTO dto = triagemBO.criar(triagem);
+            return Response.created(
+                    uriInfo.getAbsolutePathBuilder().path(String.valueOf(dto.getId())).build()
+            ).entity(dto).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
+        } catch (RegraNegocioException e) {
+            return Response.status(422).entity(new ErroResponse(e.getMessage())).build();
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(500).entity(new ErroResponse("Erro ao criar triagem.")).build();
@@ -57,7 +80,8 @@ public class TriagemResource {
     public Response aprovar(@PathParam("id") long id) {
         try {
             Encaminhamento encam = aprovacaoService.aprovar(id);
-            return Response.status(201).entity(encam).build();
+            EncaminhamentoResponseDTO dto = encaminhamentoBO.buscarPorId(encam.getIdEncam());
+            return Response.status(201).entity(dto).build();
         } catch (RegraNegocioException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.startsWith(AprovacaoTriagemService.PREFIXO_NAO_ENCONTRADA)) {
@@ -74,17 +98,16 @@ public class TriagemResource {
         }
     }
 
+    // PUT atualiza somente stts_triag e decisao — nenhum outro campo do body e processado
     @PUT
     @Path("/{id}")
     public Response atualizar(@PathParam("id") long id, Triagem triagem) {
         try {
-            Triagem existente = triagemBO.buscarPorId(id);
-            if (existente == null) {
+            TriagemResponseDTO dto = triagemBO.atualizarStatus(id, triagem.getSttsTriag(), triagem.getDecisao());
+            if (dto == null) {
                 return Response.status(404).entity(new ErroResponse("Triagem nao encontrada.")).build();
             }
-            triagem.setIdTriagem(id);
-            triagemBO.atualizar(triagem);
-            return Response.ok(triagem).build();
+            return Response.ok(dto).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
         } catch (Exception e) {

@@ -2,7 +2,8 @@ package br.com.fiap.nora.resources;
 
 import br.com.fiap.nora.bo.PessoaBO;
 import br.com.fiap.nora.dto.ErroResponse;
-import br.com.fiap.nora.entities.Pessoa;
+import br.com.fiap.nora.dto.request.PessoaRequest;
+import br.com.fiap.nora.dto.response.PacienteResponseDTO;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -27,7 +28,7 @@ public class PessoaResource {
     @GET
     public Response listar() {
         try {
-            List<Pessoa> lista = pessoaBO.listar();
+            List<PacienteResponseDTO> lista = pessoaBO.listarPessoas();
             return Response.ok(lista).build();
         } catch (Exception e) {
             e.printStackTrace();
@@ -39,11 +40,11 @@ public class PessoaResource {
     @Path("/{id}")
     public Response buscarPorId(@PathParam("id") long id) {
         try {
-            Pessoa pessoa = pessoaBO.buscarPorId(id);
-            if (pessoa == null) {
+            PacienteResponseDTO dto = pessoaBO.buscarPessoa(id);
+            if (dto == null) {
                 return Response.status(404).entity(new ErroResponse("Pessoa nao encontrada.")).build();
             }
-            return Response.ok(pessoa).build();
+            return Response.ok(dto).build();
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(500).entity(new ErroResponse("Erro ao buscar pessoa.")).build();
@@ -51,10 +52,12 @@ public class PessoaResource {
     }
 
     @POST
-    public Response criar(Pessoa pessoa, @Context UriInfo uriInfo) {
+    public Response criar(PessoaRequest req, @Context UriInfo uriInfo) {
         try {
-            pessoaBO.criar(pessoa);
-            return Response.created(uriInfo.getAbsolutePathBuilder().build()).entity(pessoa).build();
+            PacienteResponseDTO dto = pessoaBO.criarPessoa(req);
+            return Response.created(
+                    uriInfo.getAbsolutePathBuilder().path(String.valueOf(dto.getId())).build()
+            ).entity(dto).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
         } catch (Exception e) {
@@ -65,15 +68,13 @@ public class PessoaResource {
 
     @PUT
     @Path("/{id}")
-    public Response atualizar(@PathParam("id") long id, Pessoa pessoa) {
+    public Response atualizar(@PathParam("id") long id, PessoaRequest req) {
         try {
-            Pessoa existente = pessoaBO.buscarPorId(id);
-            if (existente == null) {
+            PacienteResponseDTO dto = pessoaBO.atualizarPessoa(id, req);
+            if (dto == null) {
                 return Response.status(404).entity(new ErroResponse("Pessoa nao encontrada.")).build();
             }
-            pessoa.setIdPessoa(id);
-            pessoaBO.atualizar(pessoa);
-            return Response.ok(pessoa).build();
+            return Response.ok(dto).build();
         } catch (IllegalArgumentException e) {
             return Response.status(400).entity(new ErroResponse(e.getMessage())).build();
         } catch (Exception e) {

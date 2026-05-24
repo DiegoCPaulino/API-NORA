@@ -9,18 +9,20 @@ import java.util.List;
 
 public class AcompEventoDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_acomp),0)+1 FROM acomp_evento";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_ACOMP_EVENTO (ID_ENCAMINHAMENTO, TIPO_EVENTO, DS_EVENTO, ORIGEM, RESUMO_IA, TIPO_MENSAGEM) VALUES (?,?,?,?,?,?)";
+            "INSERT INTO acomp_evento (id_acomp, fk_encam_id, tp_evento, ds_evento, origem, resumo_ia, tp_mensagem, dt_evento) VALUES (?,?,?,?,?,?,?,SYSDATE)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_ACOMP_EVENTO SET DS_EVENTO=?, RESUMO_IA=? WHERE ID_ACOMP_EVENTO=?";
+            "UPDATE acomp_evento SET ds_evento=?, resumo_ia=? WHERE id_acomp=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_ACOMP_EVENTO WHERE ID_ACOMP_EVENTO=?";
+            "DELETE FROM acomp_evento WHERE id_acomp=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_ACOMP_EVENTO ORDER BY ID_ACOMP_EVENTO";
+            "SELECT * FROM acomp_evento ORDER BY id_acomp";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_ACOMP_EVENTO WHERE ID_ACOMP_EVENTO=?";
+            "SELECT * FROM acomp_evento WHERE id_acomp=?";
     private static final String SQL_SELECT_BY_ENCAM =
-            "SELECT * FROM TB_ACOMP_EVENTO WHERE ID_ENCAMINHAMENTO=? ORDER BY DATA_EVENTO ASC";
+            "SELECT * FROM acomp_evento WHERE fk_encam_id=? ORDER BY dt_evento ASC";
 
     public Connection minhaConexao;
 
@@ -28,20 +30,28 @@ public class AcompEventoDao {
         this.minhaConexao = new ConexaoFactory().conexao();
     }
 
+    public AcompEventoDao(Connection conn) {
+        this.minhaConexao = conn;
+    }
+
     public long inserirRetornandoId(AcompEvento a) throws SQLException {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT, new String[]{"ID_ACOMP_EVENTO"})) {
-            stmt.setLong(1, a.getIdEncaminhamento());
-            stmt.setString(2, a.getTipoEvento());
-            stmt.setString(3, a.getDsEvento());
-            stmt.setString(4, a.getOrigem());
-            stmt.setString(5, a.getResumoIa());
-            stmt.setString(6, a.getTipoMensagem());
-            stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getLong(1);
-            }
-            throw new SQLException("Falha ao obter ID gerado para AcompEvento.");
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_acomp.");
+            novoId = rs.getLong(1);
         }
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            if (a.getFkEncamId() != null) stmt.setLong(2, a.getFkEncamId()); else stmt.setNull(2, Types.NUMERIC);
+            stmt.setString(3, a.getTpEvento());
+            stmt.setString(4, a.getDsEvento());
+            stmt.setString(5, a.getOrigem());
+            stmt.setString(6, a.getResumoIa());
+            stmt.setString(7, a.getTpMensagem());
+            stmt.executeUpdate();
+        }
+        return novoId;
     }
 
     public List<AcompEvento> listarPorEncaminhamento(long idEncaminhamento) {
@@ -58,14 +68,8 @@ public class AcompEventoDao {
     }
 
     public String inserir(AcompEvento a) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setLong(1, a.getIdEncaminhamento());
-            stmt.setString(2, a.getTipoEvento());
-            stmt.setString(3, a.getDsEvento());
-            stmt.setString(4, a.getOrigem());
-            stmt.setString(5, a.getResumoIa());
-            stmt.setString(6, a.getTipoMensagem());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(a);
             return "Evento inserido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -77,7 +81,7 @@ public class AcompEventoDao {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
             stmt.setString(1, a.getDsEvento());
             stmt.setString(2, a.getResumoIa());
-            stmt.setLong(3, a.getIdAcompEvento());
+            stmt.setLong(3, a.getIdAcomp());
             stmt.executeUpdate();
             return "Evento atualizado com sucesso.";
         } catch (SQLException ex) {
@@ -122,14 +126,15 @@ public class AcompEventoDao {
 
     private AcompEvento mapear(ResultSet rs) throws SQLException {
         AcompEvento a = new AcompEvento();
-        a.setIdAcompEvento(rs.getLong("ID_ACOMP_EVENTO"));
-        a.setIdEncaminhamento(rs.getLong("ID_ENCAMINHAMENTO"));
-        a.setTipoEvento(rs.getString("TIPO_EVENTO"));
-        a.setDsEvento(rs.getString("DS_EVENTO"));
-        a.setOrigem(rs.getString("ORIGEM"));
-        a.setResumoIa(rs.getString("RESUMO_IA"));
-        a.setTipoMensagem(rs.getString("TIPO_MENSAGEM"));
-        Timestamp td = rs.getTimestamp("DATA_EVENTO"); if (td != null) a.setDataEvento(td.toLocalDateTime());
+        a.setIdAcomp(rs.getLong("id_acomp"));
+        a.setTpEvento(rs.getString("tp_evento"));
+        a.setDsEvento(rs.getString("ds_evento"));
+        a.setOrigem(rs.getString("origem"));
+        Date de = rs.getDate("dt_evento"); if (de != null) a.setDtEvento(de.toLocalDate());
+        a.setResumoIa(rs.getString("resumo_ia"));
+        a.setTpMensagem(rs.getString("tp_mensagem"));
+        long fe = rs.getLong("fk_encam_id"); a.setFkEncamId(rs.wasNull() ? null : fe);
+        long fu = rs.getLong("fk_user_id"); a.setFkUserId(rs.wasNull() ? null : fu);
         return a;
     }
 }

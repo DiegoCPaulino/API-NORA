@@ -9,18 +9,22 @@ import java.util.List;
 
 public class PessoaDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_pess),0)+1 FROM pessoa";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_PESSOA (ID_ENDERECO, NOME_COMPLETO, CPF, DATA_NASCIMENTO, IDADE, SEXO, EMAIL, TELEFONE, TG_CHAT_ID, CANAL_ORIG, STTS_PESS) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
+            "INSERT INTO pessoa (id_pess, nm_pess, cpf_pess, rg_pess, tel_pess, email_pess, dt_nasc, tg_chat_id, canal_orig, dt_cad, stts_pess, fk_end_id) VALUES (?,?,?,?,?,?,?,?,?,SYSDATE,?,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_PESSOA SET ID_ENDERECO=?, NOME_COMPLETO=?, CPF=?, DATA_NASCIMENTO=?, IDADE=?, SEXO=?, EMAIL=?, TELEFONE=?, TG_CHAT_ID=?, CANAL_ORIG=?, STTS_PESS=?, DATA_ATUALIZACAO=SYSTIMESTAMP WHERE ID_PESSOA=?";
+            "UPDATE pessoa SET nm_pess=?, cpf_pess=?, rg_pess=?, tel_pess=?, email_pess=?, dt_nasc=?, tg_chat_id=?, canal_orig=?, stts_pess=?, fk_end_id=? WHERE id_pess=?";
     private static final String SQL_UPDATE_STATUS =
-            "UPDATE TB_PESSOA SET STTS_PESS=?, DATA_ATUALIZACAO=SYSTIMESTAMP WHERE ID_PESSOA=?";
+            "UPDATE pessoa SET stts_pess=? WHERE id_pess=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_PESSOA WHERE ID_PESSOA=?";
+            "DELETE FROM pessoa WHERE id_pess=?";
+    private static final String SQL_EXISTS_BY_CPF =
+            "SELECT COUNT(*) FROM pessoa WHERE cpf_pess=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_PESSOA ORDER BY ID_PESSOA";
+            "SELECT * FROM pessoa ORDER BY id_pess";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_PESSOA WHERE ID_PESSOA=?";
+            "SELECT * FROM pessoa WHERE id_pess=?";
 
     public Connection minhaConexao;
 
@@ -32,6 +36,30 @@ public class PessoaDao {
         this.minhaConexao = conn;
     }
 
+    public long inserirRetornandoId(Pessoa p) throws SQLException {
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_pess.");
+            novoId = rs.getLong(1);
+        }
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            stmt.setString(2, p.getNmPess());
+            stmt.setString(3, p.getCpfPess());
+            stmt.setString(4, p.getRgPess());
+            stmt.setString(5, p.getTelPess());
+            stmt.setString(6, p.getEmailPess());
+            stmt.setDate(7, Date.valueOf(p.getDtNasc()));
+            stmt.setString(8, p.getTgChatId());
+            stmt.setString(9, p.getCanalOrig());
+            stmt.setString(10, p.getSttsPess());
+            if (p.getFkEndId() != null) stmt.setLong(11, p.getFkEndId()); else stmt.setNull(11, Types.NUMERIC);
+            stmt.executeUpdate();
+        }
+        return novoId;
+    }
+
     public void atualizarStatus(long id, String sttsPess) throws SQLException {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE_STATUS)) {
             stmt.setString(1, sttsPess);
@@ -41,19 +69,8 @@ public class PessoaDao {
     }
 
     public String inserir(Pessoa p) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setLong(1, p.getIdEndereco());
-            stmt.setString(2, p.getNomeCompleto());
-            stmt.setString(3, p.getCpf());
-            stmt.setDate(4, Date.valueOf(p.getDataNascimento()));
-            stmt.setInt(5, p.getIdade());
-            stmt.setString(6, p.getSexo());
-            stmt.setString(7, p.getEmail());
-            stmt.setString(8, p.getTelefone());
-            stmt.setString(9, p.getTgChatId());
-            stmt.setString(10, p.getCanalOrig());
-            stmt.setString(11, p.getSttsPess());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(p);
             return "Pessoa inserida com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -63,18 +80,17 @@ public class PessoaDao {
 
     public String atualizar(Pessoa p) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
-            stmt.setLong(1, p.getIdEndereco());
-            stmt.setString(2, p.getNomeCompleto());
-            stmt.setString(3, p.getCpf());
-            stmt.setDate(4, Date.valueOf(p.getDataNascimento()));
-            stmt.setInt(5, p.getIdade());
-            stmt.setString(6, p.getSexo());
-            stmt.setString(7, p.getEmail());
-            stmt.setString(8, p.getTelefone());
-            stmt.setString(9, p.getTgChatId());
-            stmt.setString(10, p.getCanalOrig());
-            stmt.setString(11, p.getSttsPess());
-            stmt.setLong(12, p.getIdPessoa());
+            stmt.setString(1, p.getNmPess());
+            stmt.setString(2, p.getCpfPess());
+            stmt.setString(3, p.getRgPess());
+            stmt.setString(4, p.getTelPess());
+            stmt.setString(5, p.getEmailPess());
+            stmt.setDate(6, Date.valueOf(p.getDtNasc()));
+            stmt.setString(7, p.getTgChatId());
+            stmt.setString(8, p.getCanalOrig());
+            stmt.setString(9, p.getSttsPess());
+            if (p.getFkEndId() != null) stmt.setLong(10, p.getFkEndId()); else stmt.setNull(10, Types.NUMERIC);
+            stmt.setLong(11, p.getIdPess());
             stmt.executeUpdate();
             return "Pessoa atualizada com sucesso.";
         } catch (SQLException ex) {
@@ -105,6 +121,18 @@ public class PessoaDao {
         return lista;
     }
 
+    public boolean existePorCpf(String cpf) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_EXISTS_BY_CPF)) {
+            stmt.setString(1, cpf);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
     public Pessoa buscarPorId(long id) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_SELECT_BY_ID)) {
             stmt.setLong(1, id);
@@ -119,20 +147,18 @@ public class PessoaDao {
 
     private Pessoa mapear(ResultSet rs) throws SQLException {
         Pessoa p = new Pessoa();
-        p.setIdPessoa(rs.getLong("ID_PESSOA"));
-        p.setIdEndereco(rs.getLong("ID_ENDERECO"));
-        p.setNomeCompleto(rs.getString("NOME_COMPLETO"));
-        p.setCpf(rs.getString("CPF"));
-        Date dn = rs.getDate("DATA_NASCIMENTO"); if (dn != null) p.setDataNascimento(dn.toLocalDate());
-        p.setIdade(rs.getInt("IDADE"));
-        p.setSexo(rs.getString("SEXO"));
-        p.setEmail(rs.getString("EMAIL"));
-        p.setTelefone(rs.getString("TELEFONE"));
-        p.setTgChatId(rs.getString("TG_CHAT_ID"));
-        p.setCanalOrig(rs.getString("CANAL_ORIG"));
-        p.setSttsPess(rs.getString("STTS_PESS"));
-        Timestamp tc = rs.getTimestamp("DATA_CRIACAO"); if (tc != null) p.setDataCriacao(tc.toLocalDateTime());
-        Timestamp ta = rs.getTimestamp("DATA_ATUALIZACAO"); if (ta != null) p.setDataAtualizacao(ta.toLocalDateTime());
+        p.setIdPess(rs.getLong("id_pess"));
+        p.setNmPess(rs.getString("nm_pess"));
+        p.setCpfPess(rs.getString("cpf_pess"));
+        p.setRgPess(rs.getString("rg_pess"));
+        p.setTelPess(rs.getString("tel_pess"));
+        p.setEmailPess(rs.getString("email_pess"));
+        Date dn = rs.getDate("dt_nasc"); if (dn != null) p.setDtNasc(dn.toLocalDate());
+        p.setTgChatId(rs.getString("tg_chat_id"));
+        p.setCanalOrig(rs.getString("canal_orig"));
+        Date dc = rs.getDate("dt_cad"); if (dc != null) p.setDtCad(dc.toLocalDate());
+        p.setSttsPess(rs.getString("stts_pess"));
+        long fe = rs.getLong("fk_end_id"); p.setFkEndId(rs.wasNull() ? null : fe);
         return p;
     }
 }

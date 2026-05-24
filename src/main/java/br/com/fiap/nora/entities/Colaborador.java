@@ -1,54 +1,59 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public class Colaborador {
 
-    private long idColaborador;
-    private String nome;
-    private String email;
-    private String senhaHash;
-    private String perfil;
-    private String statusColab;
-    private LocalDateTime dataCriacao;
+    private Long idColab;
+    private String nmColab;
+    private String cpfColab;
+    private String emailColab;
+    private String cargoColab;
+    private LocalDate dtEntrada;
+    private String sttsColab;
+    private Long fkEndId;
 
     public Colaborador() {}
 
-    public Colaborador(long idColaborador, String nome, String email, String senhaHash,
-                       String perfil, String statusColab, LocalDateTime dataCriacao) {
-        this.idColaborador = idColaborador;
-        this.nome = nome;
-        this.email = email;
-        this.senhaHash = senhaHash;
-        this.perfil = perfil;
-        this.statusColab = statusColab;
-        this.dataCriacao = dataCriacao;
+    public Colaborador(Long idColab, String nmColab, String cpfColab, String emailColab,
+                       String cargoColab, LocalDate dtEntrada, String sttsColab, Long fkEndId) {
+        this.idColab = idColab;
+        this.nmColab = nmColab;
+        this.cpfColab = cpfColab;
+        this.emailColab = emailColab;
+        this.cargoColab = cargoColab;
+        this.dtEntrada = dtEntrada;
+        this.sttsColab = sttsColab;
+        this.fkEndId = fkEndId;
     }
 
-    public long getIdColaborador() { return idColaborador; }
-    public void setIdColaborador(long idColaborador) { this.idColaborador = idColaborador; }
+    public Long getIdColab() { return idColab; }
+    public void setIdColab(Long idColab) { this.idColab = idColab; }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public String getNmColab() { return nmColab; }
+    public void setNmColab(String nmColab) { this.nmColab = nmColab; }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getCpfColab() { return cpfColab; }
+    public void setCpfColab(String cpfColab) { this.cpfColab = cpfColab; }
 
-    public String getSenhaHash() { return senhaHash; }
-    public void setSenhaHash(String senhaHash) { this.senhaHash = senhaHash; }
+    public String getEmailColab() { return emailColab; }
+    public void setEmailColab(String emailColab) { this.emailColab = emailColab; }
 
-    public String getPerfil() { return perfil; }
-    public void setPerfil(String perfil) { this.perfil = perfil; }
+    public String getCargoColab() { return cargoColab; }
+    public void setCargoColab(String cargoColab) { this.cargoColab = cargoColab; }
 
-    public String getStatusColab() { return statusColab; }
-    public void setStatusColab(String statusColab) { this.statusColab = statusColab; }
+    public LocalDate getDtEntrada() { return dtEntrada; }
+    public void setDtEntrada(LocalDate dtEntrada) { this.dtEntrada = dtEntrada; }
 
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
+    public String getSttsColab() { return sttsColab; }
+    public void setSttsColab(String sttsColab) { this.sttsColab = sttsColab; }
+
+    public Long getFkEndId() { return fkEndId; }
+    public void setFkEndId(Long fkEndId) { this.fkEndId = fkEndId; }
 
     @Override
     public String toString() {
-        return "Colaborador{idColaborador=" + idColaborador + "\nnome=" + nome
-                + "\nemail=" + email + "\nperfil=" + perfil + "\nstatusColab=" + statusColab + "}";
+        return "Colaborador{idColab=" + idColab + "\nnmColab=" + nmColab
+                + "\nemailColab=" + emailColab + "\nsttsColab=" + sttsColab + "}";
     }
 }

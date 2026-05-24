@@ -10,18 +10,29 @@ import java.util.List;
 
 public class EncaminhamentoDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_encam),0)+1 FROM encaminhamento";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_ENCAMINHAMENTO (ID_PACIENTE, ID_DENTISTA, ID_TRIAGEM, PREV_FOLLOW, STTS_ENCAM, MATCH_AUTO, DIST_KM, PRIORIDADE, METODO_CALCULO, OBSERVACAO) VALUES (?,?,?,?,?,?,?,?,?,?)";
+            "INSERT INTO encaminhamento (id_encam, dt_encam, prior_encam, obs_encam, prev_follow, stts_encam, match_auto, dist_km, fk_pac_id, fk_dent_id) VALUES (?,SYSDATE,?,?,?,?,?,?,?,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_ENCAMINHAMENTO SET PREV_FOLLOW=?, STTS_ENCAM=?, DIST_KM=?, OBSERVACAO=? WHERE ID_ENCAMINHAMENTO=?";
+            "UPDATE encaminhamento SET prior_encam=?, obs_encam=?, prev_follow=?, stts_encam=? WHERE id_encam=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_ENCAMINHAMENTO WHERE ID_ENCAMINHAMENTO=?";
+            "DELETE FROM encaminhamento WHERE id_encam=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_ENCAMINHAMENTO ORDER BY ID_ENCAMINHAMENTO";
+            "SELECT * FROM encaminhamento ORDER BY id_encam";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_ENCAMINHAMENTO WHERE ID_ENCAMINHAMENTO=?";
+            "SELECT * FROM encaminhamento WHERE id_encam=?";
+    private static final String SQL_SELECT_BY_PACIENTE =
+            "SELECT * FROM encaminhamento WHERE fk_pac_id=? ORDER BY dt_encam DESC";
+    private static final String SQL_SELECT_BY_DENTISTA =
+            "SELECT * FROM encaminhamento WHERE fk_dent_id=? ORDER BY dt_encam DESC";
+    private static final String SQL_COUNT_ATIVOS_BY_DENTISTA =
+            "SELECT COUNT(*) FROM encaminhamento WHERE fk_dent_id=? AND stts_encam='ativo'";
+    // <= captura follow-ups atrasados além dos de hoje — mais robusto que igualdade exata
     private static final String SQL_FOLLOWUP =
-            "SELECT * FROM TB_ENCAMINHAMENTO WHERE TRUNC(PREV_FOLLOW) = ? AND STTS_ENCAM = 'ativo'";
+            "SELECT * FROM encaminhamento WHERE TRUNC(prev_follow) <= TRUNC(SYSDATE) AND stts_encam = 'ativo'";
+    private static final String SQL_UPDATE_STATUS_OBS =
+            "UPDATE encaminhamento SET stts_encam=?, obs_encam=? WHERE id_encam=?";
 
     public Connection minhaConexao;
 
@@ -35,38 +46,30 @@ public class EncaminhamentoDao {
 
     // Retorna o ID gerado; usado na transacao de aprovacao
     public long inserirRetornandoId(Encaminhamento e) throws SQLException {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT, new String[]{"ID_ENCAMINHAMENTO"})) {
-            stmt.setLong(1, e.getIdPaciente());
-            stmt.setLong(2, e.getIdDentista());
-            stmt.setLong(3, e.getIdTriagem());
-            stmt.setTimestamp(4, Timestamp.valueOf(e.getPrevFollow()));
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_encam.");
+            novoId = rs.getLong(1);
+        }
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            stmt.setString(2, e.getPriorEncam());
+            stmt.setString(3, e.getObsEncam());
+            if (e.getPrevFollow() != null) stmt.setDate(4, Date.valueOf(e.getPrevFollow())); else stmt.setNull(4, Types.DATE);
             stmt.setString(5, e.getSttsEncam());
             stmt.setString(6, e.getMatchAuto());
             if (e.getDistKm() != null) stmt.setDouble(7, e.getDistKm()); else stmt.setNull(7, Types.NUMERIC);
-            stmt.setString(8, e.getPrioridade());
-            stmt.setString(9, e.getMetodoCalculo());
-            stmt.setString(10, e.getObservacao());
+            if (e.getFkPacId() != null) stmt.setLong(8, e.getFkPacId()); else stmt.setNull(8, Types.NUMERIC);
+            if (e.getFkDentId() != null) stmt.setLong(9, e.getFkDentId()); else stmt.setNull(9, Types.NUMERIC);
             stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getLong(1);
-            }
         }
-        throw new SQLException("Nenhum ID gerado ao inserir encaminhamento.");
+        return novoId;
     }
 
     public String inserir(Encaminhamento e) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setLong(1, e.getIdPaciente());
-            stmt.setLong(2, e.getIdDentista());
-            stmt.setLong(3, e.getIdTriagem());
-            stmt.setTimestamp(4, Timestamp.valueOf(e.getPrevFollow()));
-            stmt.setString(5, e.getSttsEncam());
-            stmt.setString(6, e.getMatchAuto());
-            if (e.getDistKm() != null) stmt.setDouble(7, e.getDistKm()); else stmt.setNull(7, Types.NUMERIC);
-            stmt.setString(8, e.getPrioridade());
-            stmt.setString(9, e.getMetodoCalculo());
-            stmt.setString(10, e.getObservacao());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(e);
             return "Encaminhamento inserido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -74,13 +77,22 @@ public class EncaminhamentoDao {
         }
     }
 
+    public void atualizarStatusObs(long id, String status, String obs) throws SQLException {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE_STATUS_OBS)) {
+            stmt.setString(1, status);
+            if (obs != null) stmt.setString(2, obs); else stmt.setNull(2, Types.VARCHAR);
+            stmt.setLong(3, id);
+            stmt.executeUpdate();
+        }
+    }
+
     public String atualizar(Encaminhamento e) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
-            stmt.setTimestamp(1, Timestamp.valueOf(e.getPrevFollow()));
-            stmt.setString(2, e.getSttsEncam());
-            if (e.getDistKm() != null) stmt.setDouble(3, e.getDistKm()); else stmt.setNull(3, Types.NUMERIC);
-            stmt.setString(4, e.getObservacao());
-            stmt.setLong(5, e.getIdEncaminhamento());
+            stmt.setString(1, e.getPriorEncam());
+            stmt.setString(2, e.getObsEncam());
+            if (e.getPrevFollow() != null) stmt.setDate(3, Date.valueOf(e.getPrevFollow())); else stmt.setNull(3, Types.DATE);
+            stmt.setString(4, e.getSttsEncam());
+            stmt.setLong(5, e.getIdEncam());
             stmt.executeUpdate();
             return "Encaminhamento atualizado com sucesso.";
         } catch (SQLException ex) {
@@ -123,32 +135,67 @@ public class EncaminhamentoDao {
         return null;
     }
 
-    // Usado pelo FollowUpService — retorna encaminhamentos ativos com prev_follow na data alvo
-    public List<Encaminhamento> listarParaFollowUp(LocalDate dataAlvo) throws SQLException {
+    public List<Encaminhamento> listarPorPaciente(long idPac) {
         List<Encaminhamento> lista = new ArrayList<>();
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_FOLLOWUP)) {
-            stmt.setDate(1, java.sql.Date.valueOf(dataAlvo));
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_SELECT_BY_PACIENTE)) {
+            stmt.setLong(1, idPac);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) lista.add(mapear(rs));
             }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return lista;
+    }
+
+    public int contarAtivosPorDentista(long idDent) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_COUNT_ATIVOS_BY_DENTISTA)) {
+            stmt.setLong(1, idDent);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Encaminhamento> listarPorDentista(long idDent) {
+        List<Encaminhamento> lista = new ArrayList<>();
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_SELECT_BY_DENTISTA)) {
+            stmt.setLong(1, idDent);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) lista.add(mapear(rs));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return lista;
+    }
+
+    // Usado pelo FollowUpService — retorna encaminhamentos ativos com prev_follow <= hoje (inclui atrasados)
+    public List<Encaminhamento> listarParaFollowUp() throws SQLException {
+        List<Encaminhamento> lista = new ArrayList<>();
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_FOLLOWUP);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) lista.add(mapear(rs));
         }
         return lista;
     }
 
     private Encaminhamento mapear(ResultSet rs) throws SQLException {
         Encaminhamento e = new Encaminhamento();
-        e.setIdEncaminhamento(rs.getLong("ID_ENCAMINHAMENTO"));
-        e.setIdPaciente(rs.getLong("ID_PACIENTE"));
-        e.setIdDentista(rs.getLong("ID_DENTISTA"));
-        e.setIdTriagem(rs.getLong("ID_TRIAGEM"));
-        Timestamp te = rs.getTimestamp("DT_ENCAM"); if (te != null) e.setDtEncam(te.toLocalDateTime());
-        Timestamp pf = rs.getTimestamp("PREV_FOLLOW"); if (pf != null) e.setPrevFollow(pf.toLocalDateTime());
-        e.setSttsEncam(rs.getString("STTS_ENCAM"));
-        e.setMatchAuto(rs.getString("MATCH_AUTO"));
-        double dk = rs.getDouble("DIST_KM"); e.setDistKm(rs.wasNull() ? null : dk);
-        e.setPrioridade(rs.getString("PRIORIDADE"));
-        e.setMetodoCalculo(rs.getString("METODO_CALCULO"));
-        e.setObservacao(rs.getString("OBSERVACAO"));
+        e.setIdEncam(rs.getLong("id_encam"));
+        Date de = rs.getDate("dt_encam"); if (de != null) e.setDtEncam(de.toLocalDate());
+        e.setPriorEncam(rs.getString("prior_encam"));
+        e.setObsEncam(rs.getString("obs_encam"));
+        Date pf = rs.getDate("prev_follow"); if (pf != null) e.setPrevFollow(pf.toLocalDate());
+        e.setSttsEncam(rs.getString("stts_encam"));
+        e.setMatchAuto(rs.getString("match_auto"));
+        double dk = rs.getDouble("dist_km"); e.setDistKm(rs.wasNull() ? null : dk);
+        long fp = rs.getLong("fk_pac_id"); e.setFkPacId(rs.wasNull() ? null : fp);
+        long fd = rs.getLong("fk_dent_id"); e.setFkDentId(rs.wasNull() ? null : fd);
+        long fu = rs.getLong("fk_user_id"); e.setFkUserId(rs.wasNull() ? null : fu);
         return e;
     }
 }

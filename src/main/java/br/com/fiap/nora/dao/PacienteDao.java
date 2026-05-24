@@ -9,16 +9,24 @@ import java.util.List;
 
 public class PacienteDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_pac),0)+1 FROM paciente";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_PACIENTE (ID_PESSOA, ID_TRIAGEM, IDADE, STTS_TRAT, OBSERVACOES) VALUES (?,?,?,?,?)";
+            "INSERT INTO paciente (id_pac, fk_pess_id, id_triag_ref, dt_aprov, stts_trat) VALUES (?,?,?,SYSDATE,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_PACIENTE SET STTS_TRAT=?, OBSERVACOES=? WHERE ID_PACIENTE=?";
+            "UPDATE paciente SET stts_trat=? WHERE id_pac=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_PACIENTE WHERE ID_PACIENTE=?";
+            "DELETE FROM paciente WHERE id_pac=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_PACIENTE ORDER BY ID_PACIENTE";
+            "SELECT * FROM paciente ORDER BY id_pac";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_PACIENTE WHERE ID_PACIENTE=?";
+            "SELECT * FROM paciente WHERE id_pac=?";
+    private static final String SQL_SELECT_BY_PESSOA =
+            "SELECT * FROM paciente WHERE fk_pess_id=?";
+    private static final String SQL_EXISTS_BY_PESSOA =
+            "SELECT COUNT(*) FROM paciente WHERE fk_pess_id=?";
+    private static final String SQL_EXISTS_BY_TRIAGEM =
+            "SELECT COUNT(*) FROM paciente WHERE id_triag_ref=?";
 
     public Connection minhaConexao;
 
@@ -32,28 +40,26 @@ public class PacienteDao {
 
     // Retorna o ID gerado; usado na transacao de aprovacao onde o ID e necessario imediatamente
     public long inserirRetornandoId(Paciente p) throws SQLException {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT, new String[]{"ID_PACIENTE"})) {
-            stmt.setLong(1, p.getIdPessoa());
-            stmt.setLong(2, p.getIdTriagem());
-            stmt.setInt(3, p.getIdade());
-            stmt.setString(4, p.getSttsTrat());
-            stmt.setString(5, p.getObservacoes());
-            stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getLong(1);
-            }
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_pac.");
+            novoId = rs.getLong(1);
         }
-        throw new SQLException("Nenhum ID gerado ao inserir paciente.");
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            if (p.getFkPessId() != null) stmt.setLong(2, p.getFkPessId()); else stmt.setNull(2, Types.NUMERIC);
+            if (p.getIdTriagRef() != null) stmt.setLong(3, p.getIdTriagRef()); else stmt.setNull(3, Types.NUMERIC);
+            // dt_aprov = SYSDATE no SQL
+            stmt.setString(4, p.getSttsTrat());
+            stmt.executeUpdate();
+        }
+        return novoId;
     }
 
     public String inserir(Paciente p) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setLong(1, p.getIdPessoa());
-            stmt.setLong(2, p.getIdTriagem());
-            stmt.setInt(3, p.getIdade());
-            stmt.setString(4, p.getSttsTrat());
-            stmt.setString(5, p.getObservacoes());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(p);
             return "Paciente inserido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -64,8 +70,7 @@ public class PacienteDao {
     public String atualizar(Paciente p) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_UPDATE)) {
             stmt.setString(1, p.getSttsTrat());
-            stmt.setString(2, p.getObservacoes());
-            stmt.setLong(3, p.getIdPaciente());
+            stmt.setLong(2, p.getIdPac());
             stmt.executeUpdate();
             return "Paciente atualizado com sucesso.";
         } catch (SQLException ex) {
@@ -96,6 +101,42 @@ public class PacienteDao {
         return lista;
     }
 
+    public boolean existePorPessoa(long idPess) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_EXISTS_BY_PESSOA)) {
+            stmt.setLong(1, idPess);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean existePorTriagem(long idTriagem) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_EXISTS_BY_TRIAGEM)) {
+            stmt.setLong(1, idTriagem);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    public Paciente buscarPorPessoa(long idPess) {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_SELECT_BY_PESSOA)) {
+            stmt.setLong(1, idPess);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return mapear(rs);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public Paciente buscarPorId(long id) {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_SELECT_BY_ID)) {
             stmt.setLong(1, id);
@@ -110,13 +151,11 @@ public class PacienteDao {
 
     private Paciente mapear(ResultSet rs) throws SQLException {
         Paciente p = new Paciente();
-        p.setIdPaciente(rs.getLong("ID_PACIENTE"));
-        p.setIdPessoa(rs.getLong("ID_PESSOA"));
-        p.setIdTriagem(rs.getLong("ID_TRIAGEM"));
-        p.setIdade(rs.getInt("IDADE"));
-        Timestamp ta = rs.getTimestamp("DT_APROV"); if (ta != null) p.setDtAprov(ta.toLocalDateTime());
-        p.setSttsTrat(rs.getString("STTS_TRAT"));
-        p.setObservacoes(rs.getString("OBSERVACOES"));
+        p.setIdPac(rs.getLong("id_pac"));
+        Date da = rs.getDate("dt_aprov"); if (da != null) p.setDtAprov(da.toLocalDate());
+        p.setSttsTrat(rs.getString("stts_trat"));
+        long itr = rs.getLong("id_triag_ref"); p.setIdTriagRef(rs.wasNull() ? null : itr);
+        long fp = rs.getLong("fk_pess_id"); p.setFkPessId(rs.wasNull() ? null : fp);
         return p;
     }
 }

@@ -1,42 +1,48 @@
 package br.com.fiap.nora.entities;
 
-import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import java.time.LocalDate;
 
-// Apenas uma FK contextual pode estar preenchida por vez — constraint CHK_CONV_CTX_FK no Oracle.
+// Apenas uma FK contextual pode estar preenchida por vez — constraint conv_lado_ck no Oracle.
 public class Conversa {
 
-    private long idConversa;
+    private Long idConv;
     private String canalConv;
     private String contexto;
-    private String tgThreadId;
-    private Long idPessoa;
-    private Long idPaciente;
-    private Long idDentista;
+    private String iniciadoPor;
+    private LocalDate dtInicio;
+    @JsonAlias({"status", "stts_conv"})
     private String sttsConv;
-    private int naoLidas;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    private String tgThreadId;
+    @JsonAlias({"idPessoa", "pessoaId", "fk_pess_id"})
+    private Long fkPessId;
+    @JsonAlias({"idPaciente", "pacienteId", "fk_pac_id"})
+    private Long fkPacId;
+    @JsonAlias({"idDentista", "dentistaId", "fk_dent_id"})
+    private Long fkDentId;
+    @JsonAlias({"idUsuario", "usuarioId", "fk_user_id"})
+    private Long fkUserId;
 
     public Conversa() {}
 
-    public Conversa(long idConversa, String canalConv, String contexto, String tgThreadId,
-                    Long idPessoa, Long idPaciente, Long idDentista, String sttsConv,
-                    int naoLidas, LocalDateTime dataCriacao, LocalDateTime dataAtualizacao) {
-        this.idConversa = idConversa;
+    public Conversa(Long idConv, String canalConv, String contexto, String iniciadoPor,
+                    LocalDate dtInicio, String sttsConv, String tgThreadId,
+                    Long fkPessId, Long fkPacId, Long fkDentId, Long fkUserId) {
+        this.idConv = idConv;
         this.canalConv = canalConv;
         this.contexto = contexto;
-        this.tgThreadId = tgThreadId;
-        this.idPessoa = idPessoa;
-        this.idPaciente = idPaciente;
-        this.idDentista = idDentista;
+        this.iniciadoPor = iniciadoPor;
+        this.dtInicio = dtInicio;
         this.sttsConv = sttsConv;
-        this.naoLidas = naoLidas;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.tgThreadId = tgThreadId;
+        this.fkPessId = fkPessId;
+        this.fkPacId = fkPacId;
+        this.fkDentId = fkDentId;
+        this.fkUserId = fkUserId;
     }
 
-    public long getIdConversa() { return idConversa; }
-    public void setIdConversa(long idConversa) { this.idConversa = idConversa; }
+    public Long getIdConv() { return idConv; }
+    public void setIdConv(Long idConv) { this.idConv = idConv; }
 
     public String getCanalConv() { return canalConv; }
     public void setCanalConv(String canalConv) { this.canalConv = canalConv; }
@@ -44,33 +50,33 @@ public class Conversa {
     public String getContexto() { return contexto; }
     public void setContexto(String contexto) { this.contexto = contexto; }
 
-    public String getTgThreadId() { return tgThreadId; }
-    public void setTgThreadId(String tgThreadId) { this.tgThreadId = tgThreadId; }
+    public String getIniciadoPor() { return iniciadoPor; }
+    public void setIniciadoPor(String iniciadoPor) { this.iniciadoPor = iniciadoPor; }
 
-    public Long getIdPessoa() { return idPessoa; }
-    public void setIdPessoa(Long idPessoa) { this.idPessoa = idPessoa; }
-
-    public Long getIdPaciente() { return idPaciente; }
-    public void setIdPaciente(Long idPaciente) { this.idPaciente = idPaciente; }
-
-    public Long getIdDentista() { return idDentista; }
-    public void setIdDentista(Long idDentista) { this.idDentista = idDentista; }
+    public LocalDate getDtInicio() { return dtInicio; }
+    public void setDtInicio(LocalDate dtInicio) { this.dtInicio = dtInicio; }
 
     public String getSttsConv() { return sttsConv; }
     public void setSttsConv(String sttsConv) { this.sttsConv = sttsConv; }
 
-    public int getNaoLidas() { return naoLidas; }
-    public void setNaoLidas(int naoLidas) { this.naoLidas = naoLidas; }
+    public String getTgThreadId() { return tgThreadId; }
+    public void setTgThreadId(String tgThreadId) { this.tgThreadId = tgThreadId; }
 
-    public LocalDateTime getDataCriacao() { return dataCriacao; }
-    public void setDataCriacao(LocalDateTime dataCriacao) { this.dataCriacao = dataCriacao; }
+    public Long getFkPessId() { return fkPessId; }
+    public void setFkPessId(Long fkPessId) { this.fkPessId = fkPessId; }
 
-    public LocalDateTime getDataAtualizacao() { return dataAtualizacao; }
-    public void setDataAtualizacao(LocalDateTime dataAtualizacao) { this.dataAtualizacao = dataAtualizacao; }
+    public Long getFkPacId() { return fkPacId; }
+    public void setFkPacId(Long fkPacId) { this.fkPacId = fkPacId; }
+
+    public Long getFkDentId() { return fkDentId; }
+    public void setFkDentId(Long fkDentId) { this.fkDentId = fkDentId; }
+
+    public Long getFkUserId() { return fkUserId; }
+    public void setFkUserId(Long fkUserId) { this.fkUserId = fkUserId; }
 
     @Override
     public String toString() {
-        return "Conversa{idConversa=" + idConversa + "\ncontexto=" + contexto
+        return "Conversa{idConv=" + idConv + "\ncontexto=" + contexto
                 + "\ncanalConv=" + canalConv + "\nsttsConv=" + sttsConv + "}";
     }
 }

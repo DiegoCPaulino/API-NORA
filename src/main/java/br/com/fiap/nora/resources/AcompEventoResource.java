@@ -2,8 +2,10 @@ package br.com.fiap.nora.resources;
 
 import br.com.fiap.nora.bo.AcompEventoBO;
 import br.com.fiap.nora.dto.ErroResponse;
+import br.com.fiap.nora.dto.response.FollowUpDTO;
 import br.com.fiap.nora.entities.AcompEvento;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
+import br.com.fiap.nora.mapper.EncaminhamentoMapper;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -13,6 +15,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.ArrayList;
 import java.util.List;
 
 // Único Resource hospeda ambos os endpoints: evita criar EncaminhamentoResource só para um GET
@@ -48,7 +51,11 @@ public class AcompEventoResource {
     public Response listarPorEncaminhamento(@PathParam("id") long id) {
         try {
             List<AcompEvento> eventos = bo.listarPorEncaminhamento(id);
-            return Response.ok(eventos).build();
+            List<FollowUpDTO> dtos = new ArrayList<>();
+            for (AcompEvento ev : eventos) {
+                dtos.add(EncaminhamentoMapper.toFollowUp(ev));
+            }
+            return Response.ok(dtos).build();
         } catch (RegraNegocioException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "";
             if (msg.startsWith(AcompEventoBO.PREFIXO_NAO_ENCONTRADA)) {

@@ -7,31 +7,32 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-// A regra de exclusividade de FKs contextuais é responsabilidade da BO — este DAO apenas persiste.
+// A regra de exclusividade de FKs contextuais e responsabilidade da BO — este DAO apenas persiste.
 public class ConversaDao {
 
+    private static final String SQL_NEXT_ID =
+            "SELECT NVL(MAX(id_conv),0)+1 FROM conversa";
     private static final String SQL_INSERT =
-            "INSERT INTO TB_CONVERSA (CANAL_CONV, CONTEXTO, TG_THREAD_ID, ID_PESSOA, ID_PACIENTE, ID_DENTISTA, STTS_CONV, NAO_LIDAS) VALUES (?,?,?,?,?,?,?,?)";
+            "INSERT INTO conversa (id_conv, canal_conv, contexto, iniciado_por, dt_inicio, stts_conv, tg_thread_id, fk_pess_id, fk_pac_id, fk_dent_id) VALUES (?,?,?,?,SYSDATE,?,?,?,?,?)";
     private static final String SQL_UPDATE =
-            "UPDATE TB_CONVERSA SET CANAL_CONV=?, CONTEXTO=?, TG_THREAD_ID=?, ID_PESSOA=?, ID_PACIENTE=?, ID_DENTISTA=?, STTS_CONV=?, NAO_LIDAS=?, DATA_ATUALIZACAO=SYSTIMESTAMP WHERE ID_CONVERSA=?";
+            "UPDATE conversa SET canal_conv=?, contexto=?, tg_thread_id=?, fk_pess_id=?, fk_pac_id=?, fk_dent_id=?, stts_conv=? WHERE id_conv=?";
     private static final String SQL_DELETE =
-            "DELETE FROM TB_CONVERSA WHERE ID_CONVERSA=?";
+            "DELETE FROM conversa WHERE id_conv=?";
     private static final String SQL_SELECT_ALL =
-            "SELECT * FROM TB_CONVERSA ORDER BY ID_CONVERSA";
+            "SELECT * FROM conversa ORDER BY id_conv";
     private static final String SQL_SELECT_BY_ID =
-            "SELECT * FROM TB_CONVERSA WHERE ID_CONVERSA=?";
+            "SELECT * FROM conversa WHERE id_conv=?";
     private static final String SQL_SELECT_BY_PESSOA =
-            "SELECT * FROM TB_CONVERSA WHERE ID_PESSOA=? ORDER BY DATA_CRIACAO DESC";
+            "SELECT * FROM conversa WHERE fk_pess_id=? ORDER BY dt_inicio DESC";
     // Migra conversa de 'cadastro' para 'acomp_paciente': limpa FK de pessoa, preenche FK de paciente.
     private static final String SQL_ATUALIZAR_PARA_PACIENTE =
-            "UPDATE TB_CONVERSA SET CONTEXTO='acomp_paciente', ID_PESSOA=NULL, ID_PACIENTE=?, DATA_ATUALIZACAO=SYSTIMESTAMP WHERE ID_CONVERSA=?";
-    // Upsert lógico: conversa ativa = STTS_CONV='aberta' (único status não-terminal per DDL CHECK constraint)
+            "UPDATE conversa SET contexto='acomp_paciente', fk_pess_id=NULL, fk_pac_id=? WHERE id_conv=?";
     private static final String SQL_ATIVA_POR_PESSOA =
-            "SELECT * FROM TB_CONVERSA WHERE ID_PESSOA=? AND STTS_CONV='aberta' ORDER BY DATA_CRIACAO DESC";
+            "SELECT * FROM conversa WHERE fk_pess_id=? AND stts_conv='aberta' ORDER BY dt_inicio DESC";
     private static final String SQL_ATIVA_POR_PACIENTE =
-            "SELECT * FROM TB_CONVERSA WHERE ID_PACIENTE=? AND STTS_CONV='aberta' ORDER BY DATA_CRIACAO DESC";
+            "SELECT * FROM conversa WHERE fk_pac_id=? AND stts_conv='aberta' ORDER BY dt_inicio DESC";
     private static final String SQL_ATIVA_POR_DENTISTA =
-            "SELECT * FROM TB_CONVERSA WHERE ID_DENTISTA=? AND STTS_CONV='aberta' ORDER BY DATA_CRIACAO DESC";
+            "SELECT * FROM conversa WHERE fk_dent_id=? AND stts_conv='aberta' ORDER BY dt_inicio DESC";
 
     public Connection minhaConexao;
 
@@ -53,10 +54,10 @@ public class ConversaDao {
         return null;
     }
 
-    public void atualizarParaPaciente(long idConversa, long idPaciente) throws SQLException {
+    public void atualizarParaPaciente(long idConv, long idPaciente) throws SQLException {
         try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_ATUALIZAR_PARA_PACIENTE)) {
             stmt.setLong(1, idPaciente);
-            stmt.setLong(2, idConversa);
+            stmt.setLong(2, idConv);
             stmt.executeUpdate();
         }
     }
@@ -92,34 +93,31 @@ public class ConversaDao {
     }
 
     public long inserirRetornandoId(Conversa c) throws SQLException {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT, new String[]{"ID_CONVERSA"})) {
-            stmt.setString(1, c.getCanalConv());
-            stmt.setString(2, c.getContexto());
-            stmt.setString(3, c.getTgThreadId());
-            if (c.getIdPessoa() != null) stmt.setLong(4, c.getIdPessoa()); else stmt.setNull(4, Types.NUMERIC);
-            if (c.getIdPaciente() != null) stmt.setLong(5, c.getIdPaciente()); else stmt.setNull(5, Types.NUMERIC);
-            if (c.getIdDentista() != null) stmt.setLong(6, c.getIdDentista()); else stmt.setNull(6, Types.NUMERIC);
-            stmt.setString(7, c.getSttsConv());
-            stmt.setInt(8, c.getNaoLidas());
-            stmt.executeUpdate();
-            try (ResultSet rs = stmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getLong(1);
-            }
-            throw new SQLException("Falha ao obter ID gerado para Conversa.");
+        long novoId;
+        try (PreparedStatement stmtId = minhaConexao.prepareStatement(SQL_NEXT_ID);
+             ResultSet rs = stmtId.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Falha ao calcular proximo id_conv.");
+            novoId = rs.getLong(1);
         }
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
+            stmt.setLong(1, novoId);
+            stmt.setString(2, c.getCanalConv());
+            stmt.setString(3, c.getContexto());
+            String iniciadoPor = c.getIniciadoPor() != null ? c.getIniciadoPor() : "nora_ia";
+            stmt.setString(4, iniciadoPor);
+            stmt.setString(5, c.getSttsConv());
+            stmt.setString(6, c.getTgThreadId());
+            if (c.getFkPessId() != null) stmt.setLong(7, c.getFkPessId()); else stmt.setNull(7, Types.NUMERIC);
+            if (c.getFkPacId() != null) stmt.setLong(8, c.getFkPacId()); else stmt.setNull(8, Types.NUMERIC);
+            if (c.getFkDentId() != null) stmt.setLong(9, c.getFkDentId()); else stmt.setNull(9, Types.NUMERIC);
+            stmt.executeUpdate();
+        }
+        return novoId;
     }
 
     public String inserir(Conversa c) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_INSERT)) {
-            stmt.setString(1, c.getCanalConv());
-            stmt.setString(2, c.getContexto());
-            stmt.setString(3, c.getTgThreadId());
-            if (c.getIdPessoa() != null) stmt.setLong(4, c.getIdPessoa()); else stmt.setNull(4, Types.NUMERIC);
-            if (c.getIdPaciente() != null) stmt.setLong(5, c.getIdPaciente()); else stmt.setNull(5, Types.NUMERIC);
-            if (c.getIdDentista() != null) stmt.setLong(6, c.getIdDentista()); else stmt.setNull(6, Types.NUMERIC);
-            stmt.setString(7, c.getSttsConv());
-            stmt.setInt(8, c.getNaoLidas());
-            stmt.executeUpdate();
+        try {
+            inserirRetornandoId(c);
             return "Conversa inserida com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -132,12 +130,11 @@ public class ConversaDao {
             stmt.setString(1, c.getCanalConv());
             stmt.setString(2, c.getContexto());
             stmt.setString(3, c.getTgThreadId());
-            if (c.getIdPessoa() != null) stmt.setLong(4, c.getIdPessoa()); else stmt.setNull(4, Types.NUMERIC);
-            if (c.getIdPaciente() != null) stmt.setLong(5, c.getIdPaciente()); else stmt.setNull(5, Types.NUMERIC);
-            if (c.getIdDentista() != null) stmt.setLong(6, c.getIdDentista()); else stmt.setNull(6, Types.NUMERIC);
+            if (c.getFkPessId() != null) stmt.setLong(4, c.getFkPessId()); else stmt.setNull(4, Types.NUMERIC);
+            if (c.getFkPacId() != null) stmt.setLong(5, c.getFkPacId()); else stmt.setNull(5, Types.NUMERIC);
+            if (c.getFkDentId() != null) stmt.setLong(6, c.getFkDentId()); else stmt.setNull(6, Types.NUMERIC);
             stmt.setString(7, c.getSttsConv());
-            stmt.setInt(8, c.getNaoLidas());
-            stmt.setLong(9, c.getIdConversa());
+            stmt.setLong(8, c.getIdConv());
             stmt.executeUpdate();
             return "Conversa atualizada com sucesso.";
         } catch (SQLException ex) {
@@ -182,17 +179,17 @@ public class ConversaDao {
 
     private Conversa mapear(ResultSet rs) throws SQLException {
         Conversa c = new Conversa();
-        c.setIdConversa(rs.getLong("ID_CONVERSA"));
-        c.setCanalConv(rs.getString("CANAL_CONV"));
-        c.setContexto(rs.getString("CONTEXTO"));
-        c.setTgThreadId(rs.getString("TG_THREAD_ID"));
-        long ip = rs.getLong("ID_PESSOA"); c.setIdPessoa(rs.wasNull() ? null : ip);
-        long ipac = rs.getLong("ID_PACIENTE"); c.setIdPaciente(rs.wasNull() ? null : ipac);
-        long id = rs.getLong("ID_DENTISTA"); c.setIdDentista(rs.wasNull() ? null : id);
-        c.setSttsConv(rs.getString("STTS_CONV"));
-        c.setNaoLidas(rs.getInt("NAO_LIDAS"));
-        Timestamp tc = rs.getTimestamp("DATA_CRIACAO"); if (tc != null) c.setDataCriacao(tc.toLocalDateTime());
-        Timestamp ta = rs.getTimestamp("DATA_ATUALIZACAO"); if (ta != null) c.setDataAtualizacao(ta.toLocalDateTime());
+        c.setIdConv(rs.getLong("id_conv"));
+        c.setCanalConv(rs.getString("canal_conv"));
+        c.setContexto(rs.getString("contexto"));
+        c.setIniciadoPor(rs.getString("iniciado_por"));
+        Date di = rs.getDate("dt_inicio"); if (di != null) c.setDtInicio(di.toLocalDate());
+        c.setSttsConv(rs.getString("stts_conv"));
+        c.setTgThreadId(rs.getString("tg_thread_id"));
+        long fp = rs.getLong("fk_pess_id"); c.setFkPessId(rs.wasNull() ? null : fp);
+        long fpac = rs.getLong("fk_pac_id"); c.setFkPacId(rs.wasNull() ? null : fpac);
+        long fd = rs.getLong("fk_dent_id"); c.setFkDentId(rs.wasNull() ? null : fd);
+        long fu = rs.getLong("fk_user_id"); c.setFkUserId(rs.wasNull() ? null : fu);
         return c;
     }
 }
