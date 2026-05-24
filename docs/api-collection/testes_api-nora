@@ -1,0 +1,1390 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Nora Backend Java
+meta:
+  id: wrk_2ac4a69252524f7a8ff17e4e00ddfafd
+  created: 1779644349456
+  modified: 1779644349456
+  description: ""
+collection:
+  - name: Nora Backend Java
+    meta:
+      id: fld_326e2a35f0dd44cb969141718e1cde1e
+      created: 1779583895863
+      modified: 1779650093168
+      sortKey: -1779583885903
+      description: Projeto Nora — Backend Java (Quarkus 3.34.6). Coleção Postman v2.1.
+        Configurar variável baseUrl e token antes de usar.
+    children:
+      - name: Auth
+        meta:
+          id: fld_8c6a387ee6d14667ae4c0edd694d66d7
+          created: 1779583895865
+          modified: 1779650004785
+          sortKey: -1779583885902
+          description: ""
+        children:
+          - url: "{{baseUrl}}/auth/login"
+            name: POST /auth/login
+            meta:
+              id: req_3d92d51b5057439b9aa410646d28410e
+              created: 1779583895868
+              modified: 1779588753254
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885901
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "email": "{{devEmail}}",
+                  "senha": "{{devSenha}}"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            scripts:
+              afterResponse: |-
+                const resp = insomnia.response.json();
+                if (resp && resp.token) {
+                    insomnia.collectionVariables.set('token', resp.token);
+                    console.log('Token salvo automaticamente.');
+                }
+                insomnia.test('Login retorna 200', function () {
+                    insomnia.response.to.have.status(200);
+                });
+                insomnia.test('Resposta contém token', function () {
+                    insomnia.expect(resp).to.have.property('token');
+                });
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Pessoas
+        meta:
+          id: fld_d9f849d5b501495a86c0821c296c9e64
+          created: 1779583895870
+          modified: 1779648396023
+          sortKey: -1779583885900
+          description: ""
+        children:
+          - url: "{{baseUrl}}/pessoas"
+            name: GET /pessoas
+            meta:
+              id: req_165f639842f0451bb5cd841281dc22a5
+              created: 1779583895872
+              modified: 1779583895872
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885899
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/pessoas/{{pessoaId}}"
+            name: GET /pessoas/{id}
+            meta:
+              id: req_2c05f891391a4f1ea07d794d05a2fd65
+              created: 1779583895874
+              modified: 1779585029321
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885898
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/pessoas"
+            name: POST /pessoas
+            meta:
+              id: req_1c1645d6baea43e593632bf533786f43
+              created: 1779583895883
+              modified: 1779648394162
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885897
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "nome": "Diego Teste",
+                  "cpf": "12344678901",
+                  "rg": "123456789",
+                  "dataNascimento": "13/03/2012",
+                  "sexo": "M",
+                  "telefone": "11903442222",
+                  "email": "diego.teste@nora.com",
+                  "canalOrigem": "whatsapp",
+                  "tgChatId": "tg_diegoteste",
+                  "cep": "01001000",
+                  "logradouro": "Praca da Se",
+                  "numero": "100",
+                  "complemento": "",
+                  "bairro": "Se",
+                  "cidade": "Sao Paulo",
+                  "uf": "SP"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: |-
+                const resp = insomnia.response.json();
+                if (resp && resp.id) {
+                  insomnia.collectionVariables.set('pessoaId', String(resp.id));
+                  console.log('pessoaId salvo: ' + resp.id);
+                }
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/pessoas/{{pessoaId}}"
+            name: PUT /pessoas/{id}
+            meta:
+              id: req_69e6d23998b04d098829f02536f18526
+              created: 1779583895885
+              modified: 1779584224656
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885896
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "nome": "Maria Teste da Silva",
+                  "cpf": "11122233344",
+                  "rg": "112223334",
+                  "dataNascimento": "15/06/2012",
+                  "sexo": "F",
+                  "telefone": "11999990002",
+                  "email": "maria.teste@nora.com",
+                  "canalOrigem": "telegram",
+                  "tgChatId": "tg_mariateste",
+                  "idEndereco": 1
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Triagens
+        meta:
+          id: fld_6a82d117917e4e5e99c579a07a3fbbb4
+          created: 1779583895887
+          modified: 1779648415806
+          sortKey: -1779583885895
+          description: ""
+        children:
+          - url: "{{baseUrl}}/triagens"
+            name: GET /triagens
+            meta:
+              id: req_b5303353d0ad4356a48469cf71d10235
+              created: 1779583895888
+              modified: 1779583895888
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885894
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/triagens"
+            name: POST /triagens
+            meta:
+              id: req_391d13ab94fa4a808836a5fc4c479c1a
+              created: 1779583895889
+              modified: 1779585043672
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885893
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "pessoaId": {{pessoaId}},
+                  "sexo": "M",
+                  "problemaBucal": "Dor de dente persistente ha 2 semanas",
+                  "rendaFamiliar": "ate_1sm"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: >-
+                const resp = insomnia.response.json();
+
+                if (resp && resp.id) {
+                  insomnia.collectionVariables.set('triagemIdAprovar', String(resp.id));
+                  console.log('triagemIdAprovar salvo: ' + resp.id);
+                }
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/triagens/{{triagemId}}"
+            name: PUT /triagens/{id}
+            meta:
+              id: req_257e9455f0244de4a4ed2963bb4591fa
+              created: 1779583895890
+              modified: 1779584497259
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885892
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "status": "em_analise",
+                  "decisao": "aprovado",
+                  "observacoes": "Atualizado pelo atendente"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/triagens/{{triagemId}}"
+            name: GET /triagens/{id}
+            meta:
+              id: req_a49180e6c8a748c18e6c1127e6cf3b9d
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885893.5
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Aprovação
+        meta:
+          id: fld_baad1eee31a54d4099ef945f3042240c
+          created: 1779583895891
+          modified: 1779583895891
+          sortKey: -1779583885891
+          description: ""
+        children:
+          - url: "{{baseUrl}}/triagens/{{triagemIdAprovar}}/aprovar"
+            name: POST /triagens/{id}/aprovar
+            meta:
+              id: req_4e64ddb8009149b4a1529da9946aa412
+              created: 1779583895892
+              modified: 1779585060350
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885890
+            method: POST
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Conversas
+        meta:
+          id: fld_c80490fdf4a34883a7a31d5d386581ec
+          created: 1779583895893
+          modified: 1779583895893
+          sortKey: -1779583885889
+          description: ""
+        children:
+          - url: "{{baseUrl}}/conversas"
+            name: GET /conversas
+            meta:
+              id: req_0e9efb1e356c4d3d901d929cef55f16d
+              created: 1779583895894
+              modified: 1779583895894
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888
+            method: GET
+            parameters:
+              - name: contexto
+                value: ""
+                disabled: true
+              - name: stts
+                value: ""
+                disabled: true
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/conversas/{{conversaId}}"
+            name: GET /conversas/{id}
+            meta:
+              id: req_6ca5a3d14dcf4da8b0d16f2df4154b21
+              created: 1779583895896
+              modified: 1779583895896
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885887
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/conversas"
+            name: POST /conversas
+            meta:
+              id: req_f5d86139551b4e7aa4c27fbb69e20bd8
+              created: 1779583895898
+              modified: 1779650192269
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885886
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "canalConv": "telegram",
+                  "contexto": "cadastro",
+                  "idPessoa": 1,
+                  "sttsConv": "ativa"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/conversas/{{conversaId}}/mensagens"
+            name: GET /conversas/{id}/mensagens
+            meta:
+              id: req_bf898dd222f64d168f42e62bf6b6299a
+              created: 1779583895899
+              modified: 1779583895899
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885885
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Mensagens
+        meta:
+          id: fld_adcfde1b273647e89b7e2a2cfcac3412
+          created: 1779583895901
+          modified: 1779583895901
+          sortKey: -1779583885884
+          description: ""
+        children:
+          - url: "{{baseUrl}}/mensagens"
+            name: POST /mensagens
+            meta:
+              id: req_adb84eaaeff646e49314c1092c892f84
+              created: 1779583895902
+              modified: 1779586205571
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885883
+            method: POST
+            body:
+              mimeType: application/json
+              text: >-
+                {
+                  "idConversa": {{conversaId}},
+                  "enviadoPor": "usuario",
+                  "direcao": "entrada",
+                  "conteudo": "Ola! Preciso de ajuda odontologica para meu filho.",
+                  "tipoMensagem": "texto"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Acompanhamento
+        meta:
+          id: fld_fdfb7855e5fa4ac4b853b03b999cb09e
+          created: 1779583895903
+          modified: 1779583895903
+          sortKey: -1779583885882
+          description: ""
+        children:
+          - url: "{{baseUrl}}/acomp_evento"
+            name: POST /acomp_evento
+            meta:
+              id: req_0cb4c36f7baf451e831d76d2ac6d7e39
+              created: 1779583895903
+              modified: 1779586241218
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885881
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "idEncaminhamento": {{encaminhamentoId}},
+                  "tipoEvento": "followup",
+                  "dsEvento": "Consulta agendada para semana que vem.",
+                  "origem": "atendente",
+                  "resumoIa": "Paciente confirmou interesse no atendimento.",
+                  "tipoMensagem": "texto"
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Métricas
+        meta:
+          id: fld_ed1a8c5891b34065990b72b02ad85ecf
+          created: 1779583895907
+          modified: 1779650143349
+          sortKey: -1779583885879
+          description: ""
+        children:
+          - url: "{{baseUrl}}/metricas/resumo"
+            name: GET /metricas/resumo
+            meta:
+              id: req_1c136d6fc7bb4beb8053b65a5f0436c7
+              created: 1779583895908
+              modified: 1779583895908
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885878
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/metricas/triagens-por-status"
+            name: GET /metricas/triagens-por-status
+            meta:
+              id: req_c733a0ea8d1745bc90f748965490bd56
+              created: 1779583895909
+              modified: 1779583895909
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885877
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/metricas/encaminhamentos-por-prioridade"
+            name: GET /metricas/encaminhamentos-por-prioridade
+            meta:
+              id: req_e42f50d5898649418596db808c9c1085
+              created: 1779583895910
+              modified: 1779583895910
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885876
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/metricas/leads-por-canal"
+            name: GET /metricas/leads-por-canal
+            meta:
+              id: req_cc887c4628e7423c8aa36b9ded81b705
+              created: 1779583895911
+              modified: 1779583895911
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885875
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/metricas/leads-por-mes"
+            name: GET /metricas/leads-por-mes
+            meta:
+              id: req_deb8388761314b41aa5e92e634c15544
+              created: 1779583895912
+              modified: 1779583895912
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885874
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/metricas/regioes"
+            name: GET /metricas/regioes
+            meta:
+              id: req_999c4f8f96f84273b378f3f3f9410323
+              created: 1779583895914
+              modified: 1779583895914
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885873
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Health
+        meta:
+          id: fld_59341728b0f248f6ba0450ce4f2d5dfc
+          created: 1779583895915
+          modified: 1779583895915
+          sortKey: -1779583885872
+          description: ""
+        children:
+          - url: "{{baseUrl}}/q/health"
+            name: GET /q/health
+            meta:
+              id: req_57f874df78c5470ab8901823f38f9641
+              created: 1779583895916
+              modified: 1779583895916
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885871
+            method: GET
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Pacientes
+        meta:
+          id: fld_1584445819244c51838dcbaff0d52157
+          created: 1779644313455
+          modified: 1779644313455
+          sortKey: -1779583885889.7
+          description: ""
+        children:
+          - url: "{{baseUrl}}/pacientes"
+            name: GET /pacientes
+            meta:
+              id: req_7a5458c4520d4fa4a4cafc6afb37fbca
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885889.5
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/pacientes/{{pacienteId}}"
+            name: GET /pacientes/{id}
+            meta:
+              id: req_e26af32c6dcd47de80b5d50b47e02f2c
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885889.4
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Dentistas
+        meta:
+          id: fld_609beb58c56d456fa2ef41ae25e14ec6
+          created: 1779644313455
+          modified: 1779650064699
+          sortKey: -1779583885888.95
+          description: ""
+        children:
+          - url: "{{baseUrl}}/dentistas/{{dentistaDeleteId}}"
+            name: DELETE /dentistas/{id} - 204 limpo
+            meta:
+              id: req_071bf06655db4f16a609c7e5f0709de1
+              created: 1779644313455
+              modified: 1779644792058
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.4
+            method: DELETE
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: |-
+                insomnia.test('DELETE limpo retorna 204', function () {
+                  insomnia.response.to.have.status(204);
+                });
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas/{{dentistaVinculadoId}}"
+            name: DELETE /dentistas/{id} - 409 com vínculo
+            meta:
+              id: req_0b42f2a8088944ddb92f29ad71f460c2
+              created: 1779644313455
+              modified: 1779644848629
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.2
+            method: DELETE
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: |-
+                insomnia.test('DELETE com vínculo retorna 409', function () {
+                  insomnia.response.to.have.status(409);
+                });
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas/{{dentistaId}}"
+            name: GET /dentistas/{id}
+            meta:
+              id: req_4293c1271e8e444f88947bfdf1bd6679
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.8
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas"
+            name: POST /dentistas
+            meta:
+              id: req_5b63161c97b642d9a38f645673057685
+              created: 1779644313455
+              modified: 1779644826064
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.6
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "nome": "Dr. Teste Delete",
+                  "cro": "CRO-SP-99999",
+                  "telefone": "11988887777",
+                  "email": "dentista.teste@nora.com",
+                  "tgChatId": "tg_dentista_teste",
+                  "capMensal": 5,
+                  "status": "ativo",
+                  "cep": "01001000",
+                  "logradouro": "Praca da Se",
+                  "numero": "200",
+                  "complemento": "Sala 10",
+                  "bairro": "Se",
+                  "cidade": "Sao Paulo",
+                  "uf": "SP",
+                  "especialidadeIds": []
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: >-
+                const resp = insomnia.response.json();
+
+                if (resp && resp.id) {
+                  insomnia.collectionVariables.set('dentistaId', String(resp.id));
+                  insomnia.collectionVariables.set('dentistaDeleteId', String(resp.id));
+                  console.log('dentistaId/dentistaDeleteId salvos: ' + resp.id);
+                }
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas/disponiveis"
+            name: GET /dentistas/disponiveis
+            meta:
+              id: req_8ae4259fd4864610aa9977f041fa4fd4
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.7
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas"
+            name: GET /dentistas
+            meta:
+              id: req_8e6d313f12bb43aaadc3a6a99fa234a5
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.9
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas/999999"
+            name: DELETE /dentistas/{id} - 404 inexistente
+            meta:
+              id: req_9d0d97f279b94bfaa7dda5fa02b7cb9a
+              created: 1779644313455
+              modified: 1779644841394
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.3
+            method: DELETE
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: |-
+                insomnia.test('DELETE inexistente retorna 404', function () {
+                  insomnia.response.to.have.status(404);
+                });
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/dentistas/{{dentistaId}}"
+            name: PUT /dentistas/{id}
+            meta:
+              id: req_a13aaa4939f24cafa93b26ab4b7857af
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885888.5
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "nome": "Dr. Teste Atualizado",
+                  "cro": "CRO-SP-99999",
+                  "telefone": "11988887777",
+                  "email": "dentista.teste@nora.com",
+                  "tgChatId": "tg_dentista_teste",
+                  "capMensal": 6,
+                  "status": "ativo",
+                  "cep": "01001000",
+                  "logradouro": "Praca da Se",
+                  "numero": "200",
+                  "complemento": "Sala 10",
+                  "bairro": "Se",
+                  "cidade": "Sao Paulo",
+                  "uf": "SP",
+                  "especialidadeIds": [1]
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Encaminhamentos
+        meta:
+          id: fld_a5e30b0284fd4c089d14a5c7b00eeac1
+          created: 1779644313455
+          modified: 1779650093169
+          sortKey: -1779583885882.95
+          description: ""
+        children:
+          - url: "{{baseUrl}}/encaminhamentos/{{encaminhamentoId}}"
+            name: GET /encaminhamentos/{id}
+            meta:
+              id: req_0598a36d234944e6aeab30a4c72281dd
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885882.8
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/encaminhamentos/{{encaminhamentoId}}"
+            name: GET /encaminhamentos/{id}/eventos
+            meta:
+              id: req_0e455a2e57c84121bf9452d841f87320
+              created: 1779644313455
+              modified: 1779650116959
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885882.5
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/encaminhamentos/{{encaminhamentoId}}"
+            name: PUT /encaminhamentos/{id}
+            meta:
+              id: req_369d32f2e2df4ba5a4b8dfd7221a73be
+              created: 1779644313455
+              modified: 1779650234713
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885882.6
+            method: PUT
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "status": "ativo",
+                  "obsEncam": "Paciente entrou em acompanhamento."
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/encaminhamentos"
+            name: GET /encaminhamentos
+            meta:
+              id: req_8010d3e4cad14bbbad40f88a3056d525
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885882.9
+            method: GET
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: "{{baseUrl}}/encaminhamentos"
+            name: POST /encaminhamentos
+            meta:
+              id: req_85420c9f4f644ded9bc64a25c5c494db
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885882.7
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "idPaciente": {{pacienteId}},
+                  "idDentista": {{dentistaId}},
+                  "prioridade": "media",
+                  "status": "ativo",
+                  "match_auto": "N",
+                  "dist_km": 2.5,
+                  "obsEncam": "Encaminhamento manual criado pelo atendente."
+                }
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            scripts:
+              afterResponse: >-
+                const resp = insomnia.response.json();
+
+                if (resp && resp.id) {
+                  insomnia.collectionVariables.set('encaminhamentoId', String(resp.id));
+                  console.log('encaminhamentoId salvo: ' + resp.id);
+                }
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+      - name: Follow-up
+        meta:
+          id: fld_d0b2595310454d11beab80e5c7c4566b
+          created: 1779644313455
+          modified: 1779644313455
+          sortKey: -1779583885879.7
+          description: ""
+        children:
+          - url: "{{baseUrl}}/follow-up/executar"
+            name: POST /follow-up/executar
+            meta:
+              id: req_b7f88259882645d68d985929704a5c25
+              created: 1779644313455
+              modified: 1779644313455
+              isPrivate: false
+              description: ""
+              sortKey: -1779583885879.5
+            method: POST
+            headers:
+              - name: Authorization
+                value: Bearer {{token}}
+            authentication:
+              type: bearer
+              disabled: false
+              token: "{{token}}"
+              prefix: ""
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_4286848090344b20bcac4268642b3c79
+    created: 1779583896185
+    modified: 1779650093154
+environments:
+  name: Variables
+  meta:
+    id: env_832ff5c0c7d24102bddaa139be63f7fe
+    created: 1779583895917
+    modified: 1779650093157
+    isPrivate: false
+  data:
+    baseUrl: http://localhost:10000
+    token: dd1b005d-5ff1-404b-8161-7a21f74fecaf
+    devEmail: bruno.lima@turmadobem.org
+    devSenha: hash_bruno_2024
+    pessoaId: "6"
+    triagemId: 1
+    triagemIdAprovar: "12"
+    pacienteId: 1
+    dentistaId: "8"
+    dentistaDeleteId: "8"
+    dentistaVinculadoId: 1
+    encaminhamentoId: "11"
+    conversaId: 1

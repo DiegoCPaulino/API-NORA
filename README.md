@@ -49,7 +49,6 @@ ORACLE_USER=seu_usuario_oracle
 ORACLE_PASS=sua_senha_oracle
 ORACLE_URL=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL
 N8N_WEBHOOK_FOLLOWUP_URL=               # opcional — ver seção follow-up abaixo
-ML_PREDICT_URL=                         # opcional — endpoint de predição IA; se ausente, usa nivelUrgIa do payload
 ```
 
 Copie `.env.example` para `.env` e preencha. **Nunca commite `.env`.**
@@ -131,30 +130,10 @@ curl http://localhost:10000/q/health            # health check
 
 O match de dentista é realizado **internamente** no banco Oracle: o `MatchService` seleciona o primeiro dentista ativo com vagas disponíveis (`encaminhamentos ativos < cap_mensal`). Não há chamada a serviço externo no fluxo de aprovação. `dist_km` é sempre `null` em encaminhamentos gerados automaticamente.
 
-## Limitações conhecidas
-
-- Senha comparada em texto puro (sem bcrypt) — limitação acadêmica declarada
-- MLService stub — se `ML_PREDICT_URL` não configurada, usa `nivelUrgIa` do payload como fallback
-- Match de dentista é interno (sem cálculo geográfico); `dist_km` sempre `null` em aprovações automáticas
-- `paciente.stts_trat` não atualizado em `encerrarEncaminhamento()` — pendente
-- Conversa inexistente na aprovação gera aviso em log mas não aborta a transação
-- `PREV_FOLLOW` não atualizado após follow-up — mesmo encaminhamento reprocessado enquanto `STTS_ENCAM = 'ativo'`
-- CPF/CRO duplicados retornam 400 (não 409)
-- Sem paginação nas listagens
-- Sem caching nas métricas
-
-## Evolução futura
-
-- Hash de senha com bcrypt
-- ExceptionMapper global para padronizar erros sem try/catch repetido
-- Paginação com `@QueryParam` offset/limit
-- Cache de métricas com TTL curto
-- DELETE exposto nos endpoints (DAOs já têm o método)
-
 ## Documentação adicional
 
 - `docs/api.md` — referência completa de endpoints (request/response/status codes)
 - `docs/testes-manuais.md` — roteiro de testes ponta a ponta
 - `docs/deploy-render.md` — checklist de deploy no Render
 - `docs/database/setup_oracle.sql` — DDL completo
-- `docs/api-collection/nora-backend.json` — coleção Postman v2.1
+- `docs/api-collection/teste_api-nora` — coleção Postman v2.1
