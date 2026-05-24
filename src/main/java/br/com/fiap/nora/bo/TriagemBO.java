@@ -3,15 +3,11 @@ package br.com.fiap.nora.bo;
 import br.com.fiap.nora.conexoes.ConexaoFactory;
 import br.com.fiap.nora.dao.PessoaDao;
 import br.com.fiap.nora.dao.TriagemDao;
-import br.com.fiap.nora.dto.MLRequest;
-import br.com.fiap.nora.dto.MLResponse;
 import br.com.fiap.nora.dto.response.TriagemResponseDTO;
 import br.com.fiap.nora.entities.Pessoa;
 import br.com.fiap.nora.entities.Triagem;
-import br.com.fiap.nora.exceptions.PythonApiException;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
 import br.com.fiap.nora.mapper.TriagemMapper;
-import br.com.fiap.nora.services.MLService;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -68,7 +64,7 @@ public class TriagemBO {
             throw new IllegalArgumentException("rendaFamiliar invalida. Use: ate_1sm, 1_3sm, acima_3sm.");
         }
 
-        // Busca pessoa para calcular idade — conexao fechada antes da chamada ML
+        // Busca pessoa para calcular idade
         int idadeCalculada;
         try (Connection conn = new ConexaoFactory().conexao()) {
             Pessoa pessoa = new PessoaDao(conn).buscarPorId(t.getFkPessId());
@@ -81,21 +77,8 @@ public class TriagemBO {
         // Elegibilidade calculada pelo backend — payload ignorado (§8.1)
         t.setElegTriag(t.definirElegibilidade(idadeCalculada));
 
-        // Chamada ML sem conexao Oracle aberta
-        t.setNivelUrgIa(null);
-        t.setConfIa(null);
-        try {
-            MLRequest mlReq = new MLRequest(t.getSexoPess(), idadeCalculada, t.getProblemaBucal(), t.getRendaFamiliar());
-            MLResponse mlResp = new MLService().predizerUrgencia(mlReq);
-            if (mlResp != null && mlResp.getNivel_urgencia() != null) {
-                t.setNivelUrgIa(mlResp.getNivel_urgencia());
-                t.setConfIa(mlResp.getConfianca());
-            }
-        } catch (PythonApiException e) {
-            System.err.println("[TriagemBO] MLService indisponivel: " + e.getMessage());
-        }
-
-        // Prioridade via nivel IA; fallback sempre baixa quando ML indisponivel (§8.2)
+        // Sem predição externa: nivelUrgIa e confIa vêm do payload, quando informados.
+        // A prioridade continua sendo calculada no backend pela regra da entity Triagem (§8.2).
         if (t.getNivelUrgIa() != null) {
             t.setPriorTriag(t.calcularPrioridade(t.getNivelUrgIa()));
         } else {

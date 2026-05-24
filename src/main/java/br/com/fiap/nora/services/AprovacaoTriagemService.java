@@ -7,13 +7,12 @@ import br.com.fiap.nora.dao.EncaminhamentoDao;
 import br.com.fiap.nora.dao.PacienteDao;
 import br.com.fiap.nora.dao.PessoaDao;
 import br.com.fiap.nora.dao.TriagemDao;
-import br.com.fiap.nora.dto.MatchResponse;
 import br.com.fiap.nora.entities.AcompEvento;
 import br.com.fiap.nora.entities.Conversa;
 import br.com.fiap.nora.entities.Encaminhamento;
+import br.com.fiap.nora.entities.Dentista;
 import br.com.fiap.nora.entities.Paciente;
 import br.com.fiap.nora.entities.Triagem;
-import br.com.fiap.nora.exceptions.PythonApiException;
 import br.com.fiap.nora.exceptions.RegraNegocioException;
 
 import java.sql.Connection;
@@ -59,17 +58,13 @@ public class AprovacaoTriagemService {
                 throw new RegraNegocioException(PREFIXO_JA_PROCESSADA + " Triagem ja vinculada a paciente.");
             }
 
-            // 4. Chamar MatchService usando ID_TRIAGEM — ANTES de qualquer escrita no banco
-            // Motivo: paciente criado durante aprovacao ainda nao recebeu commit; Python nao o enxergaria
-            System.out.println("[AprovacaoTriagemService] Buscando sugestao de dentista para triagem " + triagemId);
-            MatchResponse matchResp = new MatchService().sugerirDentistaPorTriagem(triagemId);
+            // 4. Buscar dentista disponível internamente no Oracle
+            System.out.println("[AprovacaoTriagemService] Buscando dentista disponivel para triagem " + triagemId);
+            Dentista dentistaSugerido = new MatchService().sugerirDentistaPorTriagem(triagemId);
 
-            // 5. Validar resposta do match
-            if ("sem_dentista_disponivel".equals(matchResp.getMetodo_calculo())) {
+            // 5. Validar resposta do match interno
+            if (dentistaSugerido == null) {
                 throw new RegraNegocioException(PREFIXO_SEM_DENTISTA + " Nenhum dentista disponivel para encaminhamento.");
-            }
-            if (matchResp.getDentista_sugerido() == null || matchResp.getDentista_sugerido().getId_dentista() == null) {
-                throw new RegraNegocioException(PREFIXO_SEM_DENTISTA + " Resposta de match sem dentista valido.");
             }
 
             // 6. Atualizar triagem: stts_triag = aprovada, decisao = aprovado
@@ -96,18 +91,18 @@ public class AprovacaoTriagemService {
                 System.err.println("[AprovacaoTriagemService] Aviso: nenhuma conversa encontrada para idPessoa=" + triagem.getFkPessId());
             }
 
-            // 10. Inserir encaminhamento com dados retornados pelo match
+            // 10. Inserir encaminhamento com dentista escolhido pelo match interno
             Encaminhamento encam = new Encaminhamento();
             encam.setFkPacId(idPaciente);
-            encam.setFkDentId(Long.valueOf(matchResp.getDentista_sugerido().getId_dentista()));
+            encam.setFkDentId(dentistaSugerido.getIdDent());
             encam.setMatchAuto("S");
-            // cep_fallback: distancia_km = null; nominatim_haversine: valor real — coluna dist_km aceita null
-            encam.setDistKm(matchResp.getDistancia_km());
+            // Sem cálculo geográfico externo: distância fica nula no fluxo automático
+            encam.setDistKm(null);
             encam.setPriorEncam(triagem.getPriorTriag());
             encam.setSttsEncam("ativo");
             // prev_follow = 15 dias a partir de hoje
             encam.setPrevFollow(LocalDate.now().plusDays(15));
-            encam.setObsEncam(matchResp.getCriterio_fallback() != null ? matchResp.getCriterio_fallback() : matchResp.getObservacao());
+            encam.setObsEncam("Match interno — dentista selecionado do banco Oracle");
 
             EncaminhamentoDao encamDao = new EncaminhamentoDao(conn);
             long idEncam = encamDao.inserirRetornandoId(encam);
@@ -132,10 +127,6 @@ public class AprovacaoTriagemService {
             // Regras de negocio (404/409/422): rollback e repropagar para o Resource mapear o status HTTP
             if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
             throw e;
-        } catch (PythonApiException e) {
-            if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
-            System.err.println("[AprovacaoTriagemService] Falha no MatchService: " + e.getMessage());
-            throw new RuntimeException("Servico de match geografico indisponivel: " + e.getMessage(), e);
         } catch (Exception e) {
             if (conn != null) try { conn.rollback(); } catch (SQLException ignored) {}
             System.err.println("[AprovacaoTriagemService] Erro inesperado: " + e.getMessage());
