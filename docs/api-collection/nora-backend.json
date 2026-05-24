@@ -6,7 +6,9 @@
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
-    { "key": "token", "value": "", "type": "string", "description": "Preencher com o token retornado pelo POST /auth/login" }
+    { "key": "token", "value": "", "type": "string", "description": "Preenchido automaticamente pelo script de Tests do POST /auth/login" },
+    { "key": "devEmail", "value": "", "type": "string", "description": "Email do colaborador para login — preencher localmente, NAO versionar" },
+    { "key": "devSenha", "value": "", "type": "string", "description": "Senha do colaborador para login — preencher localmente, NAO versionar" }
   ],
   "item": [
     {
@@ -14,13 +16,34 @@
       "item": [
         {
           "name": "POST /auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const resp = pm.response.json();",
+                  "if (resp && resp.token) {",
+                  "    pm.collectionVariables.set('token', resp.token);",
+                  "    console.log('Token salvo automaticamente.');",
+                  "}",
+                  "pm.test('Login retorna 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Resposta contém token', function () {",
+                  "    pm.expect(resp).to.have.property('token');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/auth/login",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"colaborador@nora.com\",\n  \"senha\": \"senha123\"\n}"
+              "raw": "{\n  \"email\": \"{{devEmail}}\",\n  \"senha\": \"{{devSenha}}\"\n}"
             }
           }
         }

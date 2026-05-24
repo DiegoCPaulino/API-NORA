@@ -1,12 +1,93 @@
 # Roteiro de testes manuais — Projeto Nora Java
 
+---
+
+## Configuração do Postman
+
+### 1. Importar a coleção
+
+Importar `docs/api-collection/nora-backend.json` no Postman (File → Import).
+
+A coleção já inclui:
+- Variável `baseUrl` = `http://localhost:10000`
+- Variável `token` (vazia — preenchida automaticamente pelo script abaixo)
+- Variáveis `devEmail` e `devSenha` (vazias — preencher localmente)
+- Todas as requisições organizadas por recurso
+
+### 2. Preencher credenciais localmente
+
+Após importar, clicar em **Nora Backend Java → Variables** e preencher:
+
+| Variável | Current Value | Observação |
+|---|---|---|
+| `baseUrl` | `http://localhost:10000` | Já preenchida |
+| `devEmail` | *(email do colaborador)* | **Não versionar** |
+| `devSenha` | *(senha do colaborador)* | **Não versionar** |
+| `token` | *(deixar vazio)* | Preenchido automaticamente |
+
+> Para produção, alterar `baseUrl` para a URL do Render.
+
+### 3. Script de token automático (já incluído na coleção)
+
+O request `POST /auth/login` já contém o seguinte script na aba **Tests**, que salva o token automaticamente na variável da coleção após cada login bem-sucedido:
+
+```javascript
+const resp = pm.response.json();
+if (resp && resp.token) {
+    pm.collectionVariables.set("token", resp.token);
+    console.log("Token salvo automaticamente.");
+}
+pm.test("Login retorna 200", function () {
+    pm.response.to.have.status(200);
+});
+pm.test("Resposta contém token", function () {
+    pm.expect(resp).to.have.property("token");
+});
+```
+
+### 4. Fluxo de uso
+
+1. Executar `POST /auth/login` — o token é salvo automaticamente em `{{token}}`.
+2. Executar qualquer rota protegida — o header `Authorization: Bearer {{token}}` é aplicado automaticamente.
+3. Quando o token expirar (8 horas), repetir o passo 1.
+
+### 5. Pre-request script opcional (auto-login quando token vazio)
+
+Para fazer login automaticamente quando a variável `token` estiver vazia, colar o script abaixo em **Nora Backend Java → Pre-request Script** (nível da collection):
+
+```javascript
+const token = pm.collectionVariables.get("token");
+if (!token) {
+    const email = pm.collectionVariables.get("devEmail");
+    const senha = pm.collectionVariables.get("devSenha");
+    const baseUrl = pm.collectionVariables.get("baseUrl");
+    pm.sendRequest({
+        url: baseUrl + "/auth/login",
+        method: "POST",
+        header: { "Content-Type": "application/json" },
+        body: { mode: "raw", raw: JSON.stringify({ email, senha }) }
+    }, function (err, res) {
+        if (!err && res.code === 200) {
+            const data = res.json();
+            if (data && data.token) {
+                pm.collectionVariables.set("token", data.token);
+            }
+        }
+    });
+}
+```
+
+> Este script é **opcional** — útil para sessões longas de teste sem precisar executar o login manualmente.
+
+---
+
 ## Pré-condições
 
-- Aplicação rodando em `http://localhost:8080` (ou URL do Render em produção)
+- Aplicação rodando em `http://localhost:10000` (ou URL do Render em produção)
 - Oracle FIAP acessível com env vars configuradas
 - `API_PYTHON_BASE_URL` configurada (ou vazia para testar fallback)
-- Coleção `docs/api-collection/nora-backend.json` importada no Insomnia/Postman
-- Variável `baseUrl` = `http://localhost:8080` configurada na coleção
+- Coleção `docs/api-collection/nora-backend.json` importada no Postman (ver "Configuração do Postman" acima)
+- Variáveis `devEmail` e `devSenha` preenchidas localmente na coleção
 - Pelo menos 1 colaborador cadastrado em TB_COLABORADOR
 - Pelo menos 1 endereço cadastrado em TB_ENDERECO (para criar pessoas)
 - Pelo menos 1 dentista disponível no banco (para o match na aprovação)
@@ -18,8 +99,8 @@
 | Passo | Request | Esperado |
 |---|---|---|
 | 1 | GET /q/health | 200 `{"status":"UP"}` |
-| 2 | POST /auth/login `{"email":"...", "senha":"..."}` | 200 com `{"token":"<uuid>"}` |
-| 3 | Salvar token na variável `token` da coleção | — |
+| 2 | POST /auth/login `{"email":"{{devEmail}}", "senha":"{{devSenha}}"}` | 200 com `{"token":"<uuid>", "nome":"...", "perfil":"..."}` |
+| 3 | Variável `token` da coleção é salva automaticamente pelo script de Tests | — |
 | 4 | GET /pessoas sem header Authorization | 401 |
 
 ---
@@ -38,11 +119,10 @@
 ```json
 {
   "idEndereco": 1,
-  "nomeCompleto": "Maria Teste",
-  "dataNascimento": "2012-06-15",
-  "idade": 13,
+  "nome": "Maria Teste",
+  "dataNascimento": "15/06/2012",
   "telefone": "11999990000",
-  "canalOrig": "telegram"
+  "canalOrigem": "telegram"
 }
 ```
 
@@ -70,7 +150,7 @@
 
 ## Fluxo 3 — Aprovação transacional (fluxo crítico)
 
-> Pré-condição: triagem existente com stts_triag = 'em_analise' e API Python disponível.
+> Pré-condição: triagem existente com stts_triag = 'em_analise' e ao menos 1 dentista ativo com vagas no banco.
 
 | Passo | Request | Esperado |
 |---|---|---|
@@ -128,12 +208,14 @@
 ```json
 {
   "idConversa": 1,
-  "enviadoPor": "bot",
+  "enviadoPor": "usuario",
   "direcao": "entrada",
   "conteudo": "Ola, preciso de ajuda odontologica.",
   "tipoMensagem": "texto"
 }
 ```
+
+> Valores válidos para `enviadoPor`: `usuario`, `nora_ia`, `externo`.
 
 ---
 
@@ -151,11 +233,14 @@
 ```json
 {
   "idEncaminhamento": 1,
-  "tipoEvento": "follow_up",
+  "tipoEvento": "atualizacao",
   "dsEvento": "Retorno de consulta agendado com dentista.",
   "origem": "atendente"
 }
 ```
+
+> Valores válidos para `tipoEvento`: `primeira_consulta`, `atualizacao`, `abandono`, `conclusao`, `reencaminhamento`, `followup`, `outro`.  
+> Valores válidos para `origem`: `paciente`, `dentista`, `ia`, `atendente`, `sistema`.
 
 ---
 
@@ -163,14 +248,30 @@
 
 | Passo | Request | Esperado |
 |---|---|---|
-| 1 | GET /metricas/resumo | 200 com objeto `{pessoas, triagens, pacientes, encaminhamentos, conversasAbertas}` |
-| 2 | GET /metricas/triagens-por-status | 200 com lista `[{status, total}]` |
-| 3 | GET /metricas/encaminhamentos-por-prioridade | 200 com lista `[{prioridade, total}]` |
-| 4 | GET /metricas/leads-por-canal | 200 com lista `[{canal, total}]` |
-| 5 | GET /metricas/leads-por-mes | 200 com lista `[{anoMes, total}]` ex: `"anoMes":"2026-01"` |
-| 6 | GET /metricas/regioes | 200 com lista `[{regiao, total}]` agrupado por UF |
+| 1 | GET /metricas/resumo | 200 com objeto plano `{totalLeads, totalAprovados, totalEncaminhamentos, totalDentistasAtivos, taxaAprovacao, taxaConclusao}` |
+| 2 | GET /metricas/triagens-por-status | 200 com objeto plano — chaves `em_analise`, `aprovada`, `encerrada`, `inativa` (sempre presentes) |
+| 3 | GET /metricas/encaminhamentos-por-prioridade | 200 com objeto plano — chaves `baixa`, `media`, `alta`, `urgente` (sempre presentes) |
+| 4 | GET /metricas/leads-por-canal | 200 com objeto plano — chaves `telegram`, `whatsapp`, `instagram`, `facebook`, `outro` (sempre presentes) |
+| 5 | GET /metricas/leads-por-mes | 200 com objeto plano — chaves `Jan` a `Dez` (sempre presentes, zero se sem dados) |
+| 6 | GET /metricas/regioes | 200 com objeto plano — chaves = nomes de bairros, agrupado por bairro |
 
-> Todos os endpoints de métricas retornam lista vazia se não houver dados — nunca 404.
+> Todos os endpoints de métricas retornam objeto JSON plano. Chaves com valor zero são incluídas (nunca ausentes).
+
+---
+
+## Fluxo 7 — Follow-up manual
+
+> Pré-condição: existir ao menos um encaminhamento com `STTS_ENCAM = 'ativo'` e `PREV_FOLLOW <= hoje`.
+
+| Passo | Request | Esperado |
+|---|---|---|
+| 1 | POST /follow-up/executar | 200 `{"mensagem":"Follow-up executado."}` |
+| 2 | Verificar logs do servidor | Deve conter `[FollowUpService] Encaminhamentos elegíveis: N` |
+| 3 | Se `N8N_WEBHOOK_FOLLOWUP_URL` configurada: verificar N8N recebeu payload | Payload com encaminhamentoId, pacienteNome, telefonePaciente, etc. |
+| 4 | Verificar banco: TB_ACOMP_EVENTO | Novo evento com `TP_EVENTO = 'followup'` e `ORIGEM = 'sistema'` |
+| 5 | POST /follow-up/executar novamente (mesmo encaminhamento ativo) | 200 — segue processando (sem idempotência: dispara novamente) |
+
+> **Limitação:** `PREV_FOLLOW` não é atualizado após o disparo. O encaminhamento continua elegível nas próximas execuções enquanto `STTS_ENCAM = 'ativo'`. O N8N deve tratar duplicidade, ou o colaborador deve atualizar o status do encaminhamento.
 
 ---
 
@@ -186,7 +287,7 @@
 | Conversa com 2 FKs | POST /conversas com idPessoa + idPaciente | 422 |
 | Mensagem sem conversa | POST /mensagens com idConversa=9999 | 404 |
 | Evento com tipo inválido | POST /acomp_evento tipoEvento="inexistente" | 422 |
-| API Python off | POST /triagens/{id}/aprovar | 500 controlado |
+| Sem dentista disponível no banco | POST /triagens/{id}/aprovar | 422 |
 
 ---
 
@@ -196,9 +297,10 @@
 - [ ] Captura: POST /triagens bem-sucedido (201 com elegibilidade e prioridade calculadas)
 - [ ] Captura: POST /triagens/{id}/aprovar bem-sucedido (201 com encaminhamento)
 - [ ] Captura: POST /triagens/{id}/aprovar duplicado (409)
-- [ ] Captura: GET /metricas/resumo (200 com contagens reais)
-- [ ] Captura: GET /metricas/triagens-por-status (200)
+- [ ] Captura: GET /metricas/resumo (200 com chaves totalLeads, taxaAprovacao, etc.)
+- [ ] Captura: GET /metricas/triagens-por-status (200 com objeto plano)
 - [ ] Captura: POST /acomp_evento (201)
+- [ ] Captura: POST /follow-up/executar (200 com mensagem de confirmação)
 - [ ] SELECTs no Oracle antes e depois da aprovação (TB_TRIAGEM, TB_PACIENTE, TB_CONVERSA, TB_ENCAMINHAMENTO)
 - [ ] Logs do console mostrando `[AprovacaoTriagemService]` e chamada ao MatchService
 - [ ] GET /q/health em produção (Render)
