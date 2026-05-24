@@ -92,13 +92,20 @@ public class DentistaDao {
     }
 
     public String deletar(long id) {
-        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_DELETE)) {
-            stmt.setLong(1, id);
-            stmt.executeUpdate();
+        try {
+            deletarTransacional(id);
             return "Dentista removido com sucesso.";
         } catch (SQLException ex) {
             ex.printStackTrace();
             return "Erro ao remover dentista: " + ex.getMessage();
+        }
+    }
+
+    // Usado pela BO para permitir tratamento correto de 404/409 no endpoint DELETE
+    public int deletarTransacional(long id) throws SQLException {
+        try (PreparedStatement stmt = minhaConexao.prepareStatement(SQL_DELETE)) {
+            stmt.setLong(1, id);
+            return stmt.executeUpdate();
         }
     }
 

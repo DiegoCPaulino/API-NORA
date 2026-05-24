@@ -18,6 +18,7 @@ import br.com.fiap.nora.entities.Especialidade;
 import br.com.fiap.nora.entities.Paciente;
 import br.com.fiap.nora.entities.Pessoa;
 import br.com.fiap.nora.mapper.DentistaMapper;
+import br.com.fiap.nora.exceptions.RegraNegocioException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,6 +32,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class DentistaBO {
+
+    public static final String PREFIXO_NAO_ENCONTRADA = "NAO_ENCONTRADA:";
+    public static final String PREFIXO_REGRA = "REGRA:";
 
     private static final Set<String> STATUS_VALIDOS = new HashSet<>(
             Arrays.asList("ativo", "inativo", "suspenso"));
@@ -227,6 +231,51 @@ public class DentistaBO {
 
             return compor(conn, dentista);
         }
+    }
+
+    public void deletarDentista(long idDent) throws SQLException, ClassNotFoundException {
+        try (Connection conn = new ConexaoFactory().conexao()) {
+            DentistaDao dentistaDao = new DentistaDao(conn);
+            Dentista dentista = dentistaDao.buscarPorId(idDent);
+
+            if (dentista == null) {
+                throw new RegraNegocioException(PREFIXO_NAO_ENCONTRADA + " Dentista nao encontrado.");
+            }
+
+            try {
+                int linhasAfetadas = dentistaDao.deletarTransacional(idDent);
+
+                if (linhasAfetadas == 0) {
+                    throw new RegraNegocioException(PREFIXO_NAO_ENCONTRADA + " Dentista nao encontrado.");
+                }
+            } catch (SQLException ex) {
+                if (isViolacaoIntegridadeReferencial(ex)) {
+                    throw new RegraNegocioException(PREFIXO_REGRA
+                            + " Nao e possivel excluir dentista com vinculos cadastrados.");
+                }
+
+                throw ex;
+            }
+        }
+    }
+
+    private boolean isViolacaoIntegridadeReferencial(SQLException ex) {
+        SQLException atual = ex;
+
+        while (atual != null) {
+            if (atual.getErrorCode() == 2292) {
+                return true;
+            }
+
+            String msg = atual.getMessage();
+            if (msg != null && msg.contains("ORA-02292")) {
+                return true;
+            }
+
+            atual = atual.getNextException();
+        }
+
+        return false;
     }
 
     private void validarObrigatorios(DentistaRequest req) {

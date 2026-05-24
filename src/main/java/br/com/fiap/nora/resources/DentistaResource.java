@@ -4,7 +4,9 @@ import br.com.fiap.nora.bo.DentistaBO;
 import br.com.fiap.nora.dto.ErroResponse;
 import br.com.fiap.nora.dto.request.DentistaRequest;
 import br.com.fiap.nora.dto.response.DentistaResponseDTO;
+import br.com.fiap.nora.exceptions.RegraNegocioException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -75,6 +77,32 @@ public class DentistaResource {
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(500).entity(new ErroResponse("Erro ao criar dentista.")).build();
+        }
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deletar(@PathParam("id") long id) {
+        try {
+            dentistaBO.deletarDentista(id);
+            return Response.noContent().build();
+
+        } catch (RegraNegocioException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+
+            if (msg.startsWith(DentistaBO.PREFIXO_NAO_ENCONTRADA)) {
+                return Response.status(404).entity(new ErroResponse(msg)).build();
+            }
+
+            if (msg.startsWith(DentistaBO.PREFIXO_REGRA)) {
+                return Response.status(409).entity(new ErroResponse(msg)).build();
+            }
+
+            return Response.status(400).entity(new ErroResponse(msg)).build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(500).entity(new ErroResponse("Erro ao excluir dentista.")).build();
         }
     }
 
